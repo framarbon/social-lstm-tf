@@ -21,6 +21,9 @@ def ownsample(obs_traj, pred_length=4, save_directory='save/1/'):
     with open(os.path.join(save_directory, 'social_config.pkl'), 'rb') as f:
         saved_args = pickle.load(f)
 
+    # TODO: initialize TF graph in python ros node
+    tf.reset_default_graph()
+
     # Create a SocialModel object with the saved_args and infer set to true
     model = SocialModel(saved_args, True)
     # Initialize a TensorFlow session
@@ -41,6 +44,7 @@ def ownsample(obs_traj, pred_length=4, save_directory='save/1/'):
     dimensions = [720, 576]
     obs_grid = getSequenceGridMask(obs_traj, [720, 576], saved_args.neighborhood_size, saved_args.grid_size)
 
+    print "********************** SAMPLING A NEW TRAJECTORY******************************"
     complete_traj = model.sample_nocost(sess, obs_traj, obs_grid, dimensions, pred_length)
 
     print "Mean error of the model on this scenario is unknown",
