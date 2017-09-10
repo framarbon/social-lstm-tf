@@ -12,7 +12,7 @@ import matplotlib.pyplot as plt
 
 def convert_to_obstacle_map(img):
     '''
-    Function to create an obstacle map from the annotaetd image
+    Function to create an obstacle map from the annotated image
     params:
     img : Image file path
     '''

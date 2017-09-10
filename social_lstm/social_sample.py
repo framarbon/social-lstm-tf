@@ -74,7 +74,7 @@ def main():
                         help='Dataset to be tested on')
 
     # Model to be loaded
-    parser.add_argument('--epoch', type=int, default=49,
+    parser.add_argument('--epoch', type=int, default=39,
                         help='Epoch of model to be loaded')
     
 
@@ -82,7 +82,7 @@ def main():
     sample_args = parser.parse_args()
 
     # Save directory
-    save_directory = 'save/' + str(args.test_dataset) + '/'
+    save_directory = 'save/' + str(sample_args.test_dataset) + '/'
 
     # Define the path for the config file for saved args
     with open(os.path.join(save_directory, 'social_config.pkl'), 'rb') as f:
@@ -97,11 +97,15 @@ def main():
 
     # Get the checkpoint state for the model
     ckpt = tf.train.get_checkpoint_state(save_directory)
-    # print ('loading model: ', ckpt.model_checkpoint_path)
-    print('loading model: ', ckpt.all_model_checkpoint_paths[args.epoch])
+
+    print ('PATH',ckpt.all_model_checkpoint_paths)
+    print('Length: ',len(ckpt.all_model_checkpoint_paths))
+    print ('loading model: ', ckpt.model_checkpoint_path)
+    # print('loading model: ', ckpt.all_model_checkpoint_paths[sample_args.epoch])
 
     # Restore the model at the checkpoint
-    saver.restore(sess, ckpt.all_model_checkpoint_paths[args.epoch])
+    # saver.restore(sess, ckpt.all_model_checkpoint_paths[sample_args.epoch])
+    saver.restore(sess, ckpt.model_checkpoint_path)
 
     # Dataset to get data from
     dataset = [sample_args.test_dataset]

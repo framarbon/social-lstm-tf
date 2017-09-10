@@ -31,6 +31,8 @@ def plot_trajectories(true_trajs, pred_trajs, obs_length, name):
     implot = plt.imshow(im)
     width = im.shape[0]
     height = im.shape[1]
+    print 'width '+str(width)
+    print 'height '+str(height)
     # width = 1
     # height = 1
 
@@ -63,22 +65,24 @@ def plot_trajectories(true_trajs, pred_trajs, obs_length, name):
                     traj_data[j][1].append(pred_pos[j, 1:3])
 
     for j in traj_data:
-        c = np.random.rand(3, 1)
+        # c = np.random.rand(3, 1)
+        c = [1, 0, 0]
+        c2 = [0, 0, 1]
         true_traj_ped = traj_data[j][0]  # List of [x,y] elements
         pred_traj_ped = traj_data[j][1]
 
         true_x = [p[0]*height for p in true_traj_ped]
-        true_y = [p[1]*width for p in true_traj_ped]
+        true_y = [(1-p[1])*width for p in true_traj_ped]
         pred_x = [p[0]*height for p in pred_traj_ped]
-        pred_y = [p[1]*width for p in pred_traj_ped]
+        pred_y = [(1-p[1])*width for p in pred_traj_ped]
 
         plt.plot(true_x, true_y, color=c, linestyle='solid', marker='o')
-        plt.plot(pred_x, pred_y, color=c, linestyle='dashed', marker='x')
+        plt.plot(pred_x, pred_y, color=c2, linestyle='dashed', marker='x')
 
     # plt.ylim((0, 1))
     # plt.xlim((0, 1))
-    # plt.show()
-    plt.savefig('plot/'+name+'.png')
+    plt.show()
+    # plt.savefig('plot/'+name+'.png')
     plt.gcf().clear()
     plt.close()
 
@@ -87,7 +91,7 @@ def main():
     '''
     Main function
     '''
-    f = open('save/social_results.pkl', 'rb')
+    f = open('save/3/social_results.pkl', 'rb')
     results = pickle.load(f)
 
     for i in range(len(results)):
