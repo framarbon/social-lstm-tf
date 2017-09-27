@@ -170,17 +170,25 @@ class SocialModel():
                 with tf.name_scope("get_coef"):
                     # Extract coef from output of the linear output layer
                     [o_mux, o_muy, o_sx, o_sy, o_corr] = self.get_coef(self.initial_output[ped])
+                    # print 'TEST!'
+                    # print o_mux.get_shape()
+                    # tf.summary.scalar("o_mux", tf.squeeze(o_mux))
+                    # tf.summary.scalar("o_muy", tf.squeeze(o_muy))
+                    # tf.summary.scalar("o_sx", tf.squeeze(o_sx))
+                    # tf.summary.scalar("o_sy", tf.squeeze(o_sy))
+                    # tf.summary.scalar("o_corr", tf.squeeze(o_corr))
 
                 with tf.name_scope("calculate_loss"):
                     # Calculate loss for the current ped
                     lossfunc = self.get_lossfunc(o_mux, o_muy, o_sx, o_sy, o_corr, x_data, y_data)
+                    # tf.summary.scalar("loss", lossfunc)
 
                 with tf.name_scope("increment_cost"):
                     # If it is a non-existent ped, it should not contribute to cost
                     # If the ped doesn't exist in the next frame, he/she should not contribute to cost as well
                     self.cost = tf.where(tf.logical_or(tf.equal(pedID, nonexistent_ped), tf.equal(target_pedID, nonexistent_ped)), self.cost, tf.add(self.cost, lossfunc))
                     self.counter = tf.where(tf.logical_or(tf.equal(pedID, nonexistent_ped), tf.equal(target_pedID, nonexistent_ped)), self.counter, tf.add(self.counter, self.increment))
-
+                    # tf.summary.scalar("cost", self.cost)
         with tf.name_scope("mean_cost"):
             # Mean of the cost
             self.cost = tf.div(self.cost, self.counter)
@@ -191,7 +199,7 @@ class SocialModel():
         # L2 loss
         l2 = args.lambda_param*sum(tf.nn.l2_loss(tvar) for tvar in tvars)
         self.cost = self.cost + l2
-
+        # tf.summary.scalar("Cost", self.cost)
         # Get the final LSTM states
         self.final_states = tf.concat( self.initial_states,0)
 
@@ -211,23 +219,29 @@ class SocialModel():
         self.train_op = optimizer.apply_gradients(zip(grads, tvars))
 
         # Merge all summmaries
-        # merged_summary_op = tf.merge_all_summaries()
+        self.summ = tf.summary.merge_all()
 
     def define_embedding_and_output_layers(self, args):
         # Define variables for the spatial coordinates embedding layer
         with tf.variable_scope("coordinate_embedding"):
             self.embedding_w = tf.get_variable("embedding_w", [2, args.embedding_size], initializer=tf.truncated_normal_initializer(stddev=0.1))
             self.embedding_b = tf.get_variable("embedding_b", [args.embedding_size], initializer=tf.constant_initializer(0.1))
+            tf.summary.histogram("weights", self.embedding_w)
+            tf.summary.histogram("biases", self.embedding_b)
 
         # Define variables for the social tensor embedding layer
         with tf.variable_scope("tensor_embedding"):
             self.embedding_t_w = tf.get_variable("embedding_t_w", [args.grid_size*args.grid_size*args.rnn_size, args.embedding_size], initializer=tf.truncated_normal_initializer(stddev=0.1))
             self.embedding_t_b = tf.get_variable("embedding_t_b", [args.embedding_size], initializer=tf.constant_initializer(0.1))
+            tf.summary.histogram("weights", self.embedding_t_w)
+            tf.summary.histogram("biases", self.embedding_t_b)
 
         # Define variables for the output linear layer
         with tf.variable_scope("output_layer"):
             self.output_w = tf.get_variable("output_w", [args.rnn_size, self.output_size], initializer=tf.truncated_normal_initializer(stddev=0.1))
             self.output_b = tf.get_variable("output_b", [self.output_size], initializer=tf.constant_initializer(0.1))
+            tf.summary.histogram("weights", self.output_w)
+            tf.summary.histogram("biases", self.output_b)
 
     def tf_2d_normal(self, x, y, mux, muy, sx, sy, rho):
         '''
@@ -356,6 +370,8 @@ class SocialModel():
         # so traj shape is (obs_length x maxNumPeds x 3)
         # grid is a tensor of shape obs_length x maxNumPeds x maxNumPeds x (gs**2)
         states = sess.run(self.LSTM_states)
+        writer = tf.summary.FileWriter('save/sample')
+        writer.add_graph(sess.graph)
         # print "Fitting"
         # For each frame in the sequence
         for index, frame in enumerate(traj[:-1]):
@@ -365,7 +381,8 @@ class SocialModel():
 
             feed = {self.input_data: data, self.LSTM_states: states, self.grid_data: grid_data, self.target_data: target_data}
 
-            [states, cost] = sess.run([self.final_states, self.cost], feed)
+            [states, cost, s] = sess.run([self.final_states, self.cost, self.summ], feed)
+            writer.add_summary(s, index)
             # print cost
 
         ret = traj
@@ -380,7 +397,8 @@ class SocialModel():
         for t in range(num):
             # print "**** NEW PREDICTION TIME STEP", t, "****"
             feed = {self.input_data: prev_data, self.LSTM_states: states, self.grid_data: prev_grid_data, self.target_data: prev_target_data}
-            [output, states, cost] = sess.run([self.final_output, self.final_states, self.cost], feed)
+            [output, states, cost, s] = sess.run([self.final_output, self.final_states, self.cost, self.summ], feed)
+            writer.add_summary(s, t)
             # print "Cost", cost
             # Output is a list of lists where the inner lists contain matrices of shape 1x5. The outer list contains only one element (since seq_length=1) and the inner list contains maxNumPeds elements
             # output = output[0]
@@ -413,6 +431,8 @@ class SocialModel():
         # so traj shape is (obs_length x maxNumPeds x 3)
         # grid is a tensor of shape obs_length x maxNumPeds x maxNumPeds x (gs**2)
         states = sess.run(self.LSTM_states)
+        writer = tf.summary.FileWriter('save/Ownsample')
+        writer.add_graph(sess.graph)
         # print "Fitting"
         # For each frame in the sequence
         for index, frame in enumerate(traj[:-1]):
@@ -423,7 +443,8 @@ class SocialModel():
             feed = {self.input_data: data, self.LSTM_states: states, self.grid_data: grid_data,
                     self.target_data: target_data}
 
-            [states, cost] = sess.run([self.final_states, self.cost], feed)
+            [states, cost, s] = sess.run([self.final_states, self.cost, self.summ], feed)
+            writer.add_summary(s, index)
             # print cost
 
         ret = traj
@@ -437,7 +458,8 @@ class SocialModel():
         for t in range(num):
             # print "**** NEW PREDICTION TIME STEP", t, "****"
             feed = {self.input_data: prev_data, self.LSTM_states: states, self.grid_data: prev_grid_data}
-            [output, states] = sess.run([self.final_output, self.final_states], feed)
+            [output, states, s] = sess.run([self.final_output, self.final_states, self.summ], feed)
+            writer.add_summary(s, t)
             # print "Cost", cost
             # Output is a list of lists where the inner lists contain matrices of shape 1x5. The outer list contains only one element (since seq_length=1) and the inner list contains maxNumPeds elements
             # output = output[0]

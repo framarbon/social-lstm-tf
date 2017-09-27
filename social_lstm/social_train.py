@@ -104,6 +104,8 @@ def train(args):
     with tf.Session() as sess:
         # Initialize all variables in the graph
         sess.run(tf.initialize_all_variables())
+        writer = tf.summary.FileWriter('save/training')
+        writer.add_graph(sess.graph)
         # Initialize a saver that saves all the variables in the graph
         saver = tf.train.Saver(tf.all_variables(), max_to_keep=None)
 
@@ -111,6 +113,7 @@ def train(args):
         print 'Training begin'
         best_val_loss = 100
         best_epoch = 0
+        summary=0
 
         # For each epoch
         for e in range(args.num_epochs):
@@ -152,6 +155,8 @@ def train(args):
                     # Feed the source, target data
                     feed = {model.input_data: x_batch, model.target_data: y_batch, model.grid_data: grid_batch}
 
+                    # train_loss, _, s = sess.run([model.cost, model.train_op, model.summ], feed)
+                    # writer.add_summary(s, batch)
                     train_loss, _ = sess.run([model.cost, model.train_op], feed)
 
                     loss_batch += train_loss
@@ -159,6 +164,14 @@ def train(args):
                 end = time.time()
                 loss_batch = loss_batch / data_loader.batch_size
                 loss_epoch += loss_batch
+
+                train_cost = tf.Summary(value=[tf.Summary.Value(tag="TrainingCost", simple_value=loss_batch)])
+                writer.add_summary(train_cost, e * data_loader.num_batches + b)
+                # summ = tf.summary.merge_all()
+                # writer.add_summary(s, b)
+                # print 'Printing Tensor'
+                # tf.Print(train_cost,[train_cost, tf.shape(train_cost)])
+
                 print(
                     "{}/{} (epoch {}), train_loss = {:.3f}, time/batch = {:.3f}"
                     .format(
@@ -181,6 +194,9 @@ def train(args):
             # Validation
             data_loader.reset_batch_pointer(valid=True)
             loss_epoch = 0
+
+            writer2 = tf.summary.FileWriter('save/validation')
+            writer2.add_graph(sess.graph)
 
             for b in range(data_loader.num_batches):
 
@@ -210,12 +226,17 @@ def train(args):
                     # Feed the source, target data
                     feed = {model.input_data: x_batch, model.target_data: y_batch, model.grid_data: grid_batch}
 
+                    # train_loss, s = sess.run([model.cost, model.summ], feed)
+                    # writer2.add_summary(s, b)
                     train_loss = sess.run(model.cost, feed)
-
                     loss_batch += train_loss
 
                 loss_batch = loss_batch / data_loader.batch_size
                 loss_epoch += loss_batch
+                test_cost = tf.Summary(value=[tf.Summary.Value(tag="TestCost", simple_value=loss_batch)])
+                writer2.add_summary(test_cost, e * data_loader.num_batches + b)
+
+                # print 'Validation Batch number ' + str(b)
 
             loss_epoch /= data_loader.valid_num_batches
 

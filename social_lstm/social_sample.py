@@ -64,17 +64,17 @@ def main():
 
     parser = argparse.ArgumentParser()
     # Observed length of the trajectory parameter
-    parser.add_argument('--obs_length', type=int, default=6,
+    parser.add_argument('--obs_length', type=int, default=8,
                         help='Observed length of the trajectory')
     # Predicted length of the trajectory parameter
-    parser.add_argument('--pred_length', type=int, default=6,
+    parser.add_argument('--pred_length', type=int, default=12,
                         help='Predicted length of the trajectory')
     # Test dataset
     parser.add_argument('--test_dataset', type=int, default=3,
                         help='Dataset to be tested on')
 
     # Model to be loaded
-    parser.add_argument('--epoch', type=int, default=39,
+    parser.add_argument('--epoch', type=int, default=0,
                         help='Epoch of model to be loaded')
     
 
