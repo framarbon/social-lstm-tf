@@ -67,6 +67,9 @@ def main():
     # Lambda regularization parameter (L2)
     parser.add_argument('--lambda_param', type=float, default=0.0005,
                         help='L2 regularization parameter')
+    # TensorBoard Writer name
+    parser.add_argument('--writer', type=str, default='training',
+                        help='L2 regularization parameter')
     args = parser.parse_args()
     train(args)
 
@@ -104,7 +107,7 @@ def train(args):
     with tf.Session() as sess:
         # Initialize all variables in the graph
         sess.run(tf.initialize_all_variables())
-        writer = tf.summary.FileWriter('save/training')
+        writer = tf.summary.FileWriter(save_directory+args.writer)
         writer.add_graph(sess.graph)
         # Initialize a saver that saves all the variables in the graph
         saver = tf.train.Saver(tf.all_variables(), max_to_keep=None)
@@ -195,8 +198,8 @@ def train(args):
             data_loader.reset_batch_pointer(valid=True)
             loss_epoch = 0
 
-            writer2 = tf.summary.FileWriter('save/validation')
-            writer2.add_graph(sess.graph)
+            # writer2 = tf.summary.FileWriter('save/validation')
+            writer.add_graph(sess.graph)
 
             for b in range(data_loader.num_batches):
 
@@ -234,7 +237,7 @@ def train(args):
                 loss_batch = loss_batch / data_loader.batch_size
                 loss_epoch += loss_batch
                 test_cost = tf.Summary(value=[tf.Summary.Value(tag="TestCost", simple_value=loss_batch)])
-                writer2.add_summary(test_cost, e * data_loader.num_batches + b)
+                writer.add_summary(test_cost, e * data_loader.num_batches + b)
 
                 # print 'Validation Batch number ' + str(b)
 
