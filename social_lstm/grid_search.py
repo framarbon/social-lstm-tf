@@ -36,6 +36,9 @@ class GridSearch:
             # Do the training
             train(inputs)
 
+            # Reset graph
+            tf.reset_default_graph()
+
     def get_hstring(self, values):
         hstring = "lr="+str(values[0])
         for i in range(self.len-1):
