@@ -70,6 +70,9 @@ def main():
     # TensorBoard Writer name
     parser.add_argument('--writer', type=str, default='training',
                         help='L2 regularization parameter')
+    # Obstacle Map
+    parser.add_argument('--map', type=str, default='',
+                        help='Obstacle Map file')
     args = parser.parse_args()
     train(args)
 

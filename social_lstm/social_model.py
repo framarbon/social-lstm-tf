@@ -8,13 +8,13 @@ Date: 17th October 2016
 
 import tensorflow as tf
 import numpy as np
+import pickle
 from tensorflow.python.ops import rnn_cell
 from grid import getSequenceGridMask
 import pdb
 
 
 class SocialModel():
-
     def __init__(self, args, infer=False):
         '''
         Initialisation function for the class SocialModel
@@ -39,6 +39,14 @@ class SocialModel():
         # Maximum number of peds
         self.maxNumPeds = args.maxNumPeds
 
+        # Flag to determine whether static obstacles are considered
+        self.obs_map = []
+        if len(args.map) > 0:
+            # TODO: extract the obs_map from each dataset in social_utils
+            map_file = open(args.map,'r')
+            self.obs_map = np.array(pickle.load(map_file))
+            print 'OBSTACLE MAP ENABLED'
+
         # NOTE : For now assuming, batch_size is always 1. That is the input
         # to the model is always a sequence of frames
 
@@ -60,7 +68,8 @@ class SocialModel():
 
         # Grid data would be a binary matrix which encodes whether a pedestrian is present in
         # a grid cell of other pedestrian
-        self.grid_data = tf.placeholder(tf.float32, [args.seq_length, args.maxNumPeds, args.maxNumPeds, args.grid_size*args.grid_size], name="grid_data")
+        self.grid_data = tf.placeholder(tf.float32, [args.seq_length, args.maxNumPeds, args.maxNumPeds,
+                                                     args.grid_size * args.grid_size], name="grid_data")
 
         # Variable to hold the value of the learning rate
         self.lr = tf.Variable(args.learning_rate, trainable=False, name="learning_rate")
@@ -116,7 +125,8 @@ class SocialModel():
 
             current_frame_data = frame  # MNP x 3 tensor
             current_grid_frame_data = grid_frame_data[seq]  # MNP x MNP x (GS**2) tensor
-            social_tensor = self.getSocialTensor(current_grid_frame_data, self.output_states)  # MNP x (GS**2 * RNN_size)
+            social_tensor = self.getSocialTensor(current_frame_data, current_grid_frame_data,
+                                                 self.output_states)  # MNP x (GS**2 * RNN_size)
             # NOTE: Using a tensor of zeros as the social tensor
             # social_tensor = tf.zeros([args.maxNumPeds, args.grid_size*args.grid_size*args.rnn_size])
 
@@ -130,17 +140,20 @@ class SocialModel():
                     # Extract x and y positions of the current ped
                     self.spatial_input = tf.slice(current_frame_data, [ped, 1], [1, 2])  # Tensor of shape (1,2)
                     # Extract the social tensor of the current ped
-                    self.tensor_input = tf.slice(social_tensor, [ped, 0], [1, args.grid_size*args.grid_size*args.rnn_size])  # Tensor of shape (1, g*g*r)
+                    self.tensor_input = tf.slice(social_tensor, [ped, 0], [1,
+                                                                           args.grid_size * args.grid_size * args.rnn_size])  # Tensor of shape (1, g*g*r)
 
                 with tf.name_scope("embeddings_operations"):
                     # Embed the spatial input
-                    embedded_spatial_input = tf.nn.relu(tf.nn.xw_plus_b(self.spatial_input, self.embedding_w, self.embedding_b))
+                    embedded_spatial_input = tf.nn.relu(
+                        tf.nn.xw_plus_b(self.spatial_input, self.embedding_w, self.embedding_b))
                     # Embed the tensor input
-                    embedded_tensor_input = tf.nn.relu(tf.nn.xw_plus_b(self.tensor_input, self.embedding_t_w, self.embedding_t_b))
+                    embedded_tensor_input = tf.nn.relu(
+                        tf.nn.xw_plus_b(self.tensor_input, self.embedding_t_w, self.embedding_t_b))
 
                 with tf.name_scope("concatenate_embeddings"):
                     # Concatenate the embeddings
-                    complete_input = tf.concat([embedded_spatial_input, embedded_tensor_input],1)
+                    complete_input = tf.concat([embedded_spatial_input, embedded_tensor_input], 1)
 
                 # One step of LSTM
                 with tf.variable_scope("LSTM") as scope:
@@ -186,8 +199,12 @@ class SocialModel():
                 with tf.name_scope("increment_cost"):
                     # If it is a non-existent ped, it should not contribute to cost
                     # If the ped doesn't exist in the next frame, he/she should not contribute to cost as well
-                    self.cost = tf.where(tf.logical_or(tf.equal(pedID, nonexistent_ped), tf.equal(target_pedID, nonexistent_ped)), self.cost, tf.add(self.cost, lossfunc))
-                    self.counter = tf.where(tf.logical_or(tf.equal(pedID, nonexistent_ped), tf.equal(target_pedID, nonexistent_ped)), self.counter, tf.add(self.counter, self.increment))
+                    self.cost = tf.where(
+                        tf.logical_or(tf.equal(pedID, nonexistent_ped), tf.equal(target_pedID, nonexistent_ped)),
+                        self.cost, tf.add(self.cost, lossfunc))
+                    self.counter = tf.where(
+                        tf.logical_or(tf.equal(pedID, nonexistent_ped), tf.equal(target_pedID, nonexistent_ped)),
+                        self.counter, tf.add(self.counter, self.increment))
                     # tf.summary.scalar("cost", self.cost)
         with tf.name_scope("mean_cost"):
             # Mean of the cost
@@ -197,11 +214,11 @@ class SocialModel():
         tvars = tf.trainable_variables()
 
         # L2 loss
-        l2 = args.lambda_param*sum(tf.nn.l2_loss(tvar) for tvar in tvars)
+        l2 = args.lambda_param * sum(tf.nn.l2_loss(tvar) for tvar in tvars)
         self.cost = self.cost + l2
         # tf.summary.scalar("Cost", self.cost)
         # Get the final LSTM states
-        self.final_states = tf.concat( self.initial_states,0)
+        self.final_states = tf.concat(self.initial_states, 0)
 
         # Get the final distribution parameters
         self.final_output = self.initial_output
@@ -224,21 +241,35 @@ class SocialModel():
     def define_embedding_and_output_layers(self, args):
         # Define variables for the spatial coordinates embedding layer
         with tf.variable_scope("coordinate_embedding"):
-            self.embedding_w = tf.get_variable("embedding_w", [2, args.embedding_size], initializer=tf.truncated_normal_initializer(stddev=0.1))
-            self.embedding_b = tf.get_variable("embedding_b", [args.embedding_size], initializer=tf.constant_initializer(0.1))
+            self.embedding_w = tf.get_variable("embedding_w", [2, args.embedding_size],
+                                               initializer=tf.truncated_normal_initializer(stddev=0.1))
+            self.embedding_b = tf.get_variable("embedding_b", [args.embedding_size],
+                                               initializer=tf.constant_initializer(0.1))
             tf.summary.histogram("weights", self.embedding_w)
             tf.summary.histogram("biases", self.embedding_b)
 
+        with tf.variable_scope("obstacle_embedding"):
+            self.embedding_o_w = tf.get_variable("embedding_o_w", [1, args.embedding_size],
+                                               initializer=tf.truncated_normal_initializer(stddev=0.1))
+            self.embedding_o_b = tf.get_variable("embedding_o_b", [args.embedding_size],
+                                               initializer=tf.constant_initializer(0.1))
+            tf.summary.histogram("weights", self.embedding_o_w)
+            tf.summary.histogram("biases", self.embedding_o_b)
+
         # Define variables for the social tensor embedding layer
         with tf.variable_scope("tensor_embedding"):
-            self.embedding_t_w = tf.get_variable("embedding_t_w", [args.grid_size*args.grid_size*args.rnn_size, args.embedding_size], initializer=tf.truncated_normal_initializer(stddev=0.1))
-            self.embedding_t_b = tf.get_variable("embedding_t_b", [args.embedding_size], initializer=tf.constant_initializer(0.1))
+            self.embedding_t_w = tf.get_variable("embedding_t_w",
+                                                 [args.grid_size * args.grid_size * args.rnn_size, args.embedding_size],
+                                                 initializer=tf.truncated_normal_initializer(stddev=0.1))
+            self.embedding_t_b = tf.get_variable("embedding_t_b", [args.embedding_size],
+                                                 initializer=tf.constant_initializer(0.1))
             tf.summary.histogram("weights", self.embedding_t_w)
             tf.summary.histogram("biases", self.embedding_t_b)
 
         # Define variables for the output linear layer
         with tf.variable_scope("output_layer"):
-            self.output_w = tf.get_variable("output_w", [args.rnn_size, self.output_size], initializer=tf.truncated_normal_initializer(stddev=0.1))
+            self.output_w = tf.get_variable("output_w", [args.rnn_size, self.output_size],
+                                            initializer=tf.truncated_normal_initializer(stddev=0.1))
             self.output_b = tf.get_variable("output_b", [self.output_size], initializer=tf.constant_initializer(0.1))
             tf.summary.histogram("weights", self.output_w)
             tf.summary.histogram("biases", self.output_b)
@@ -263,10 +294,11 @@ class SocialModel():
         # Calculate sx*sy
         sxsy = tf.multiply(sx, sy)
         # Calculate the exponential factor
-        z = tf.square(tf.div(normx, sx)) + tf.square(tf.div(normy, sy)) - 2*tf.div(tf.multiply(rho, tf.multiply(normx, normy)), sxsy)
+        z = tf.square(tf.div(normx, sx)) + tf.square(tf.div(normy, sy)) - 2 * tf.div(
+            tf.multiply(rho, tf.multiply(normx, normy)), sxsy)
         negRho = 1 - tf.square(rho)
         # Numerator
-        result = tf.exp(tf.div(-z, 2*negRho))
+        result = tf.exp(tf.div(-z, 2 * negRho))
         # Normalization constant
         denom = 2 * np.pi * tf.multiply(sxsy, tf.sqrt(negRho))
         # Final PDF calculation
@@ -315,7 +347,8 @@ class SocialModel():
 
         return [z_mux, z_muy, z_sx, z_sy, z_corr]
 
-    def getSocialTensor(self, grid_frame_data, output_states):
+    def getSocialTensor(self, current_frame_data, grid_frame_data, output_states):
+        # TODO include obs_map
         '''
         Computes the social tensor for all the maxNumPeds in the frame
         params:
@@ -323,28 +356,63 @@ class SocialModel():
         output_states : A list of tensors each of shape 1 x RNN_size of length MNP
         '''
         # Create a zero tensor of shape MNP x (GS**2) x RNN_size
-        social_tensor = tf.zeros([self.args.maxNumPeds, self.grid_size*self.grid_size, self.rnn_size], name="social_tensor")
+        social_tensor = tf.zeros([self.args.maxNumPeds, self.grid_size * self.grid_size, self.rnn_size],
+                                 name="social_tensor")
         # Create a list of zero tensors each of shape 1 x (GS**2) x RNN_size of length MNP
         social_tensor = tf.split(social_tensor, self.args.maxNumPeds, 0)
         # Concatenate list of hidden states to form a tensor of shape MNP x RNN_size
-        hidden_states = tf.concat(output_states,0)
+        hidden_states = tf.concat(output_states, 0)
         # Split the grid_frame_data into grid_data for each pedestrians
         # Consists of a list of tensors each of shape 1 x MNP x (GS**2) of length MNP
         grid_frame_ped_data = tf.split(grid_frame_data, self.args.maxNumPeds, 0)
         # Squeeze tensors to form MNP x (GS**2) matrices
         grid_frame_ped_data = [tf.squeeze(input_, [0]) for input_ in grid_frame_ped_data]
+        # Dimensions occupancy map (height, width)
+        dimensions = self.obs_map.shape
 
         # For each pedestrian
         for ped in range(self.args.maxNumPeds):
             # Compute social tensor for the current pedestrian
             with tf.name_scope("tensor_calculation"):
+
                 social_tensor_ped = tf.matmul(tf.transpose(grid_frame_ped_data[ped]), hidden_states)
-                social_tensor[ped] = tf.reshape(social_tensor_ped, [1, self.grid_size*self.grid_size, self.rnn_size])
+                # Compute the static obstacles tensor
+                if len(self.obs_map) > 0:
+                    position_ped = tf.squeeze(tf.slice(current_frame_data, [ped, 1], [1, 2]))  # Tensor of shape (1,2)
+                    global_position_ped = tf.cast([tf.round(dimensions[1] * (position_ped[1] + 1) / 2),
+                                           tf.round(dimensions[0] * (position_ped[0] + 1) / 2)], tf.int32)
+                    # Origin and end corners of the grid around the ped
+                    origin_grid_ped = tf.add(global_position_ped, tf.negative(self.args.neighborhood_size / 2))
+                    # end_grid_ped = tf.add(global_position_ped, self.args.neighborhood_size / 2.0)
+                    # obs_map_ped = self.obs_map[origin_grid_ped[0]:end_grid_ped[0], origin_grid_ped[1]:end_grid_ped[1]]
+
+                    # ROI o the obstacle map centered at ped
+                    obs_map_ped = tf.slice(self.obs_map, origin_grid_ped,
+                                           [self.args.neighborhood_size,self.args.neighborhood_size])
+                    # Pooling the ROI into the grid size
+                    tensor_obs_map_ped = tf.reshape(obs_map_ped, [1, self.args.neighborhood_size, self.args.neighborhood_size, 1])
+                    cell_size = self.args.neighborhood_size/self.args.grid_size
+                    pool = tf.cast(tf.nn.pool(input=tensor_obs_map_ped,
+                                      window_shape=[cell_size, cell_size],
+                                      strides=[cell_size, cell_size],
+                                      padding='SAME',
+                                      pooling_type="AVG"), tf.float32)
+                    pool_grid = tf.reshape(pool, [self.args.grid_size*self.args.grid_size, 1])
+
+                    with tf.name_scope("obstacle_embeddings"):
+                        # Embed the spatial input
+                        embedded_obs = tf.nn.relu(tf.nn.xw_plus_b(pool_grid, self.embedding_o_w, self.embedding_o_b))
+                        static_tensor = tf.concat([embedded_obs, tf.zeros(tf.shape(embedded_obs))],1)
+
+                    # Including static obstacle information into the social tensor
+                    social_tensor_ped = tf.add(social_tensor_ped, static_tensor)
+                social_tensor[ped] = tf.reshape(social_tensor_ped, [1, self.grid_size * self.grid_size, self.rnn_size])
 
         # Concatenate the social tensor from a list to a tensor of shape MNP x (GS**2) x RNN_size
         social_tensor = tf.concat(social_tensor, 0)
         # Reshape the tensor to match the dimensions MNP x (GS**2 * RNN_size)
-        social_tensor = tf.reshape(social_tensor, [self.args.maxNumPeds, self.grid_size*self.grid_size*self.rnn_size])
+        social_tensor = tf.reshape(social_tensor,
+                                   [self.args.maxNumPeds, self.grid_size * self.grid_size * self.rnn_size])
         return social_tensor
 
     def sample_gaussian_2d(self, mux, muy, sx, sy, rho):
@@ -360,7 +428,7 @@ class SocialModel():
         # Extract mean
         mean = [mux, muy]
         # Extract covariance matrix
-        cov = [[sx*sx, rho*sx*sy], [rho*sx*sy, sy*sy]]
+        cov = [[sx * sx, rho * sx * sy], [rho * sx * sy, sy * sy]]
         # Sample a point from the multivariate normal distribution
         x = np.random.multivariate_normal(mean, cov, 1)
         return x[0][0], x[0][1]
@@ -376,10 +444,12 @@ class SocialModel():
         # For each frame in the sequence
         for index, frame in enumerate(traj[:-1]):
             data = np.reshape(frame, (1, self.maxNumPeds, 3))
-            target_data = np.reshape(traj[index+1], (1, self.maxNumPeds, 3))
-            grid_data = np.reshape(grid[index, :], (1, self.maxNumPeds, self.maxNumPeds, self.grid_size*self.grid_size))
+            target_data = np.reshape(traj[index + 1], (1, self.maxNumPeds, 3))
+            grid_data = np.reshape(grid[index, :],
+                                   (1, self.maxNumPeds, self.maxNumPeds, self.grid_size * self.grid_size))
 
-            feed = {self.input_data: data, self.LSTM_states: states, self.grid_data: grid_data, self.target_data: target_data}
+            feed = {self.input_data: data, self.LSTM_states: states, self.grid_data: grid_data,
+                    self.target_data: target_data}
 
             [states, cost, s] = sess.run([self.final_states, self.cost, self.summ], feed)
             writer.add_summary(s, index)
@@ -390,13 +460,14 @@ class SocialModel():
         last_frame = traj[-1]
 
         prev_data = np.reshape(last_frame, (1, self.maxNumPeds, 3))
-        prev_grid_data = np.reshape(grid[-1], (1, self.maxNumPeds, self.maxNumPeds, self.grid_size*self.grid_size))
+        prev_grid_data = np.reshape(grid[-1], (1, self.maxNumPeds, self.maxNumPeds, self.grid_size * self.grid_size))
 
         prev_target_data = np.reshape(true_traj[traj.shape[0]], (1, self.maxNumPeds, 3))
         # Prediction
         for t in range(num):
             # print "**** NEW PREDICTION TIME STEP", t, "****"
-            feed = {self.input_data: prev_data, self.LSTM_states: states, self.grid_data: prev_grid_data, self.target_data: prev_target_data}
+            feed = {self.input_data: prev_data, self.LSTM_states: states, self.grid_data: prev_grid_data,
+                    self.target_data: prev_target_data}
             [output, states, cost, s] = sess.run([self.final_output, self.final_states, self.cost, self.summ], feed)
             writer.add_summary(s, t)
             # print "Cost", cost
@@ -438,7 +509,8 @@ class SocialModel():
         for index, frame in enumerate(traj[:-1]):
             data = np.reshape(frame, (1, self.maxNumPeds, 3))
             target_data = np.reshape(traj[index + 1], (1, self.maxNumPeds, 3))
-            grid_data = np.reshape(grid[index, :], (1, self.maxNumPeds, self.maxNumPeds, self.grid_size * self.grid_size))
+            grid_data = np.reshape(grid[index, :],
+                                   (1, self.maxNumPeds, self.maxNumPeds, self.grid_size * self.grid_size))
 
             feed = {self.input_data: data, self.LSTM_states: states, self.grid_data: grid_data,
                     self.target_data: target_data}
