@@ -199,6 +199,70 @@ class SocialDataLoader():
         # due to randomization introduced
         self.num_batches = self.num_batches * 2
 
+    def extract_dataset(self, randomUpdate=True):
+        '''
+        Function to get the next batch of points
+        '''
+        # Source data
+        x_dataset = []
+        # Target data
+        y_dataset = []
+        # Dataset data
+        d = []
+        for dataset in range(len(self.data)):
+            frame_pointer = 0
+            # Iteration index
+            i = 0
+            # Length of the current data set
+            data_len = len(self.data[dataset])
+            while i < data_len:
+                # Extract the frame data of the current dataset
+                frame_data = self.data[dataset]
+                # Get the frame pointer for the current dataset
+                idx = frame_pointer
+                # While there is still seq_length number of frames left in the current dataset
+                if idx + self.seq_length < frame_data.shape[0]:
+                    # All the data in this sequence
+                    seq_frame_data = frame_data[idx:idx+self.seq_length+1, :]
+                    seq_source_frame_data = frame_data[idx:idx+self.seq_length, :]
+                    seq_target_frame_data = frame_data[idx+1:idx+self.seq_length+1, :]
+                    # Number of unique peds in this sequence of frames
+                    pedID_list = np.unique(seq_frame_data[:, :, 0])
+                    numUniquePeds = pedID_list.shape[0]
+
+                    sourceData = np.zeros((self.seq_length, self.maxNumPeds, 3))
+                    targetData = np.zeros((self.seq_length, self.maxNumPeds, 3))
+
+                    for seq in range(self.seq_length):
+                        sseq_frame_data = seq_source_frame_data[seq, :]
+                        tseq_frame_data = seq_target_frame_data[seq, :]
+                        for ped in range(numUniquePeds):
+                            pedID = pedID_list[ped]
+
+                            if pedID == 0:
+                                continue
+                            else:
+                                sped = sseq_frame_data[sseq_frame_data[:, 0] == pedID, :]
+                                tped = np.squeeze(tseq_frame_data[tseq_frame_data[:, 0] == pedID, :])
+                                if sped.size != 0:
+                                    sourceData[seq, ped, :] = sped
+                                if tped.size != 0:
+                                    targetData[seq, ped, :] = tped
+
+                    x_dataset.append(sourceData)
+                    y_dataset.append(targetData)
+
+                    # Advance the frame pointer
+                    frame_pointer += self.seq_length
+
+                    d.append(dataset)
+                    i += 1
+                else:
+                    # Not enough frames left
+                    i = data_len + 1
+
+        return x_dataset, y_dataset, d
+
     def next_batch(self, randomUpdate=True):
         '''
         Function to get the next batch of points
