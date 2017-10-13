@@ -9,15 +9,16 @@ Date : 17th October 2016
 import os
 import pickle
 import numpy as np
-import ipdb
+# import ipdb
 import random
+from grid import getSequenceGridMask
 
 # The data loader class that loads data from the datasets considering
 # each frame as a datapoint and a sequence of consecutive frames as the
 # sequence.
 class SocialDataLoader():
 
-    def __init__(self, batch_size=50, seq_length=5, maxNumPeds=40, datasets=[0, 1, 2, 3, 4], forcePreProcess=False, infer=False):
+    def __init__(self, batch_size=50, seq_length=5, maxNumPeds=40, datasets=[0, 1, 2, 3, 4], grid_size=4, neighborhood_size = 32, forcePreProcess=False, infer=False):
         '''
         Initialiser function for the SocialDataLoader class
         params:
@@ -50,6 +51,9 @@ class SocialDataLoader():
         # Validation arguments
         self.val_fraction = 0.2
 
+        self.neighborhood_size = neighborhood_size
+        self.grid_size = grid_size
+
         # Define the path in which the process data would be stored
         data_file = os.path.join(self.data_dir, "social-trajectories.cpkl")
 
@@ -58,7 +62,7 @@ class SocialDataLoader():
             print("Creating pre-processed data from raw data")
             # Preprocess the data from the csv files of the datasets
             # Note that this data is processed in frames
-            self.frame_preprocess(self.used_data_dirs, data_file)
+            # self.frame_preprocess(self.used_data_dirs, data_file)
 
         # Load the processed data from the pickle file
         self.load_preprocessed(data_file)
@@ -92,7 +96,6 @@ class SocialDataLoader():
 
         # For each dataset
         for directory in data_dirs:
-
             # Define path of the csv file of the current dataset
             # file_path = os.path.join(directory, 'pixel_pos.csv')
             file_path = os.path.join(directory, 'pixel_pos_interpolate.csv')
@@ -199,7 +202,7 @@ class SocialDataLoader():
         # due to randomization introduced
         self.num_batches = self.num_batches * 2
 
-    def extract_dataset(self, randomUpdate=True):
+    def extract_dataset(self):
         '''
         Function to get the next batch of points
         '''
@@ -207,6 +210,8 @@ class SocialDataLoader():
         x_dataset = []
         # Target data
         y_dataset = []
+        # Grid data
+        grid_dataset = []
         # Dataset data
         d = []
         for dataset in range(len(self.data)):
@@ -249,8 +254,15 @@ class SocialDataLoader():
                                 if tped.size != 0:
                                     targetData[seq, ped, :] = tped
 
+                    if dataset == 0:
+                        dataset_data = [640, 480]
+                    else:
+                        dataset_data = [720, 576]
+                    grid_batch = getSequenceGridMask(sourceData, dataset_data, self.neighborhood_size, self.grid_size)
+
                     x_dataset.append(sourceData)
                     y_dataset.append(targetData)
+                    grid_dataset.append(grid_batch)
 
                     # Advance the frame pointer
                     frame_pointer += self.seq_length
@@ -261,7 +273,7 @@ class SocialDataLoader():
                     # Not enough frames left
                     i = data_len + 1
 
-        return x_dataset, y_dataset, d
+        return x_dataset, y_dataset, grid_dataset, d
 
     def next_batch(self, randomUpdate=True):
         '''

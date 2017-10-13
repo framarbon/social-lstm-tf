@@ -4,7 +4,7 @@ import os
 import time
 import pickle
 import ipdb
-
+import numpy as np
 from social_model import SocialModel
 from social_utils import SocialDataLoader
 from grid import getSequenceGridMask
@@ -105,8 +105,41 @@ def train(args):
     with open(os.path.join(save_directory, 'social_config.pkl'), 'wb') as f:
         pickle.dump(args, f)
 
+    x_dataset, y_dataset, grid_dataset, d = data_loader.extract_dataset()
+
     # Create a SocialModel object with the arguments
     model = SocialModel(args)
+
+    # Tell TensorFlow that the model will be built into the default Graph.
+    # with tf.Graph().as_default():
+    with tf.name_scope('input'):
+        # Input data, pin to CPU because rest of pipeline is CPU-only
+        # with tf.device('/cpu:0'):
+        # input_source = tf.constant(x_dataset)
+        # input_target = tf.constant(y_dataset)
+        # input_grid = tf.constant(grid_dataset)
+        # input_iset = tf.constant(d)
+        # source, target, grid, iset = tf.train.slice_input_producer(
+        #     [input_source, input_target, input_grid, input_iset], num_epochs=args.num_epochs)
+        # sources, targets, grids, isets = tf.train.batch([source, target, grid, iset], batch_size=args.batch_size)
+
+        nx_dataset = np.array(x_dataset)
+        ny_dataset = np.array(y_dataset)
+        ngrid_dataset = np.array(grid_dataset)
+        nd = np.array(d)
+
+        x_placeholder = tf.placeholder(nx_dataset.dtype, nx_dataset.shape)
+        y_placeholder = tf.placeholder(ny_dataset.dtype, ny_dataset.shape)
+        grid_placeholder = tf.placeholder(ngrid_dataset.dtype, ngrid_dataset.shape)
+        d_placeholder = tf.placeholder(nd.dtype, nd.shape)
+
+        dataset = tf.contrib.data.Dataset.from_tensor_slices((x_placeholder, y_placeholder,
+                                                              grid_placeholder, d_placeholder))
+        dataset = dataset.repeat(args.num_epochs)
+        dataset = dataset.shuffle(buffer_size=10000)
+        dataset = dataset.batch(args.batch_size)
+        iterator = dataset.make_initializable_iterator()
+        x_batch, y_batch, grid_batch, d_batch = iterator.get_next()
 
     config = tf.ConfigProto()
     config.gpu_options.allow_growth=True
@@ -114,160 +147,191 @@ def train(args):
     with tf.Session() as sess:
         # Initialize all variables in the graph
         sess.run(tf.initialize_all_variables())
+        sess.run(iterator.initializer, feed_dict={x_placeholder: nx_dataset, y_placeholder: ny_dataset,
+                                                              grid_placeholder: ngrid_dataset, d_placeholder:nd})
         writer = tf.summary.FileWriter(save_directory+args.writer)
         writer.add_graph(sess.graph)
         # Initialize a saver that saves all the variables in the graph
         saver = tf.train.Saver(tf.all_variables(), max_to_keep=None)
+
+        coord = tf.train.Coordinator()
+        threads = tf.train.start_queue_runners(sess=sess, coord=coord)
 
         # summary_writer = tf.train.SummaryWriter('/tmp/lstm/logs', graph_def=sess.graph_def)
         print 'Training begin'
         best_val_loss = 100
         best_epoch = 0
         summary=0
-
-        # For each epoch
-        for e in range(args.num_epochs):
-            # Assign the learning rate value for this epoch
-            sess.run(tf.assign(model.lr, args.learning_rate * (args.decay_rate ** e)))
-            # Reset the data pointers in the data_loader
-            data_loader.reset_batch_pointer(valid=False)
-
-            loss_epoch = 0
-
-            # For each batch
-            for b in range(data_loader.num_batches):
-                # Tic
-                start = time.time()
-
-                # Get the source, target and dataset data for the next batch
-                # x, y are input and target data which are lists containing numpy arrays of size seq_length x maxNumPeds x 3
-                # d is the list of dataset indices from which each batch is generated (used to differentiate between datasets)
-                x, y, d = data_loader.next_batch()
-
-                # variable to store the loss for this batch
-                loss_batch = 0
-
-                # For each sequence in the batch
-                for batch in range(data_loader.batch_size):
-                    # x_batch, y_batch and d_batch contains the source, target and dataset index data for
-                    # seq_length long consecutive frames in the dataset
-                    # x_batch, y_batch would be numpy arrays of size seq_length x maxNumPeds x 3
-                    # d_batch would be a scalar identifying the dataset from which this sequence is extracted
-                    x_batch, y_batch, d_batch = x[batch], y[batch], d[batch]
-
-                    if d_batch == 0 and datasets[0] == 0:
-                        dataset_data = [640, 480]
-                    else:
-                        dataset_data = [720, 576]
-
-                    grid_batch = getSequenceGridMask(x_batch, dataset_data, args.neighborhood_size, args.grid_size)
-
-                    # Feed the source, target data
-                    feed = {model.input_data: x_batch, model.target_data: y_batch, model.grid_data: grid_batch}
-
-                    # train_loss, _, s = sess.run([model.cost, model.train_op, model.summ], feed)
-                    # writer.add_summary(s, batch)
-                    train_loss, _ = sess.run([model.cost, model.train_op], feed)
-
-                    loss_batch += train_loss
-
-                end = time.time()
-                loss_batch = loss_batch / data_loader.batch_size
-                loss_epoch += loss_batch
-
+        counter = 0
+        start = time.time()
+        try:
+            while not coord.should_stop():
+                feed = {model.input_data: x_batch, model.target_data: y_batch, model.grid_data: grid_batch}
+                loss_batch, _ = sess.run([model.cost, model.train_op], feed)
                 train_cost = tf.Summary(value=[tf.Summary.Value(tag="TrainingCost", simple_value=loss_batch)])
-                writer.add_summary(train_cost, e * data_loader.num_batches + b)
-                # summ = tf.summary.merge_all()
-                # writer.add_summary(s, b)
-                # print 'Printing Tensor'
-                # tf.Print(train_cost,[train_cost, tf.shape(train_cost)])
-
+                writer.add_summary(train_cost, counter)
+                counter += 1
+                end = time.time()
                 print(
-                    "{}/{} (epoch {}), train_loss = {:.3f}, time/batch = {:.3f}"
+                    "{}/{} , train_loss = {:.3f}, time/batch = {:.3f}"
                     .format(
-                        e * data_loader.num_batches + b,
+                        counter,
                         args.num_epochs * data_loader.num_batches,
-                        e,
                         loss_batch, end - start))
+                start = time.time()
+        finally:
+            coord.request_stop()
+            coord.join(threads)
 
-                # Save the model if the current epoch and batch number match the frequency
-                '''
-                if (e * data_loader.num_batches + b) % args.save_every == 0 and ((e * data_loader.num_batches + b) > 0):
-                    checkpoint_path = os.path.join('save', 'social_model.ckpt')
-                    saver.save(sess, checkpoint_path, global_step=e * data_loader.num_batches + b)
-                    print("model saved to {}".format(checkpoint_path))
-                '''
-            loss_epoch /= data_loader.num_batches
-            log_file_curve.write(str(e)+','+str(loss_epoch)+',')
-            print '*****************'
+        # Wait for threads to finish.
+        coord.join(threads)
+        sess.close()
 
-            # Validation
-            data_loader.reset_batch_pointer(valid=True)
-            loss_epoch = 0
+        # # For each epoch
+        # for e in range(args.num_epochs):
+        #     # Assign the learning rate value for this epoch
+        #     sess.run(tf.assign(model.lr, args.learning_rate * (args.decay_rate ** e)))
+        #     # Reset the data pointers in the data_loader
+        #     data_loader.reset_batch_pointer(valid=False)
+        #
+        #     loss_epoch = 0
+        #
+        #     # For each batch
+        #     for b in range(data_loader.num_batches):
+        #         # Tic
+        #         start = time.time()
+        #
+        #         # Get the source, target and dataset data for the next batch
+        #         # x, y are input and target data which are lists containing numpy arrays of size seq_length x maxNumPeds x 3
+        #         # d is the list of dataset indices from which each batch is generated (used to differentiate between datasets)
+        #         x, y, d = data_loader.next_batch()
+        #
+        #         # variable to store the loss for this batch
+        #         loss_batch = 0
+        #
+        #         # For each sequence in the batch
+        #         for batch in range(data_loader.batch_size):
+        #             # x_batch, y_batch and d_batch contains the source, target and dataset index data for
+        #             # seq_length long consecutive frames in the dataset
+        #             # x_batch, y_batch would be numpy arrays of size seq_length x maxNumPeds x 3
+        #             # d_batch would be a scalar identifying the dataset from which this sequence is extracted
+        #             x_batch, y_batch, d_batch = x[batch], y[batch], d[batch]
+        #
+        #             if d_batch == 0 and datasets[0] == 0:
+        #                 dataset_data = [640, 480]
+        #             else:
+        #                 dataset_data = [720, 576]
+        #
+        #             grid_batch = getSequenceGridMask(x_batch, dataset_data, args.neighborhood_size, args.grid_size)
+        #
+        #             # Feed the source, target data
+        #             feed = {model.input_data: x_batch, model.target_data: y_batch, model.grid_data: grid_batch}
+        #
+        #             # train_loss, _, s = sess.run([model.cost, model.train_op, model.summ], feed)
+        #             # writer.add_summary(s, batch)
+        #             train_loss, _ = sess.run([model.cost, model.train_op], feed)
+        #
+        #             loss_batch += train_loss
+        #
+        #         end = time.time()
+        #         loss_batch = loss_batch / data_loader.batch_size
+        #
+        #
+        #         loss_epoch += loss_batch
+        #
+        #         train_cost = tf.Summary(value=[tf.Summary.Value(tag="TrainingCost", simple_value=loss_batch)])
+        #         writer.add_summary(train_cost, e * data_loader.num_batches + b)
+        #         # summ = tf.summary.merge_all()
+        #         # writer.add_summary(s, b)
+        #         # print 'Printing Tensor'
+        #         # tf.Print(train_cost,[train_cost, tf.shape(train_cost)])
+        #
+        #         print(
+        #             "{}/{} (epoch {}), train_loss = {:.3f}, time/batch = {:.3f}"
+        #             .format(
+        #                 e * data_loader.num_batches + b,
+        #                 args.num_epochs * data_loader.num_batches,
+        #                 e,
+        #                 loss_batch, end - start))
+        #
+        #         # Save the model if the current epoch and batch number match the frequency
+        #         '''
+        #         if (e * data_loader.num_batches + b) % args.save_every == 0 and ((e * data_loader.num_batches + b) > 0):
+        #             checkpoint_path = os.path.join('save', 'social_model.ckpt')
+        #             saver.save(sess, checkpoint_path, global_step=e * data_loader.num_batches + b)
+        #             print("model saved to {}".format(checkpoint_path))
+        #         '''
+        #     loss_epoch /= data_loader.num_batches
+        #     log_file_curve.write(str(e)+','+str(loss_epoch)+',')
+        #     print '*****************'
 
-            # writer2 = tf.summary.FileWriter('save/validation')
-            writer.add_graph(sess.graph)
-
-            for b in range(data_loader.num_batches):
-
-                # Get the source, target and dataset data for the next batch
-                # x, y are input and target data which are lists containing numpy arrays of size seq_length x maxNumPeds x 3
-                # d is the list of dataset indices from which each batch is generated (used to differentiate between datasets)
-                x, y, d = data_loader.next_valid_batch()
-
-                # variable to store the loss for this batch
-                loss_batch = 0
-
-                # For each sequence in the batch
-                for batch in range(data_loader.batch_size):
-                    # x_batch, y_batch and d_batch contains the source, target and dataset index data for
-                    # seq_length long consecutive frames in the dataset
-                    # x_batch, y_batch would be numpy arrays of size seq_length x maxNumPeds x 3
-                    # d_batch would be a scalar identifying the dataset from which this sequence is extracted
-                    x_batch, y_batch, d_batch = x[batch], y[batch], d[batch]
-
-                    if d_batch == 0 and datasets[0] == 0:
-                        dataset_data = [640, 480]
-                    else:
-                        dataset_data = [720, 576]
-
-                    grid_batch = getSequenceGridMask(x_batch, dataset_data, args.neighborhood_size, args.grid_size)
-
-                    # Feed the source, target data
-                    feed = {model.input_data: x_batch, model.target_data: y_batch, model.grid_data: grid_batch}
-
-                    # train_loss, s = sess.run([model.cost, model.summ], feed)
-                    # writer2.add_summary(s, b)
-                    train_loss = sess.run(model.cost, feed)
-                    loss_batch += train_loss
-
-                loss_batch = loss_batch / data_loader.batch_size
-                loss_epoch += loss_batch
-                test_cost = tf.Summary(value=[tf.Summary.Value(tag="TestCost", simple_value=loss_batch)])
-                writer.add_summary(test_cost, e * data_loader.num_batches + b)
-
-                # print 'Validation Batch number ' + str(b)
-
-            loss_epoch /= data_loader.valid_num_batches
-
-            # Update best validation loss until now
-            if loss_epoch < best_val_loss:
-                best_val_loss = loss_epoch
-                best_epoch = e
-
-            print('(epoch {}), valid_loss = {:.3f}'.format(e, loss_epoch))
-            print 'Best epoch', best_epoch, 'Best validation loss', best_val_loss
-            log_file_curve.write(str(loss_epoch)+'\n')
-            print '*****************'
-
-            # Save the model after each epoch
-            print 'Saving model'
-            checkpoint_path = os.path.join(save_directory, 'social_model.ckpt')
-            saver.save(sess, checkpoint_path, global_step=e)
-            print("model saved to {}".format(checkpoint_path))
-
-        print 'Best epoch', best_epoch, 'Best validation loss', best_val_loss
-        log_file.write(str(best_epoch)+','+str(best_val_loss))
+        #     # Validation
+        #     data_loader.reset_batch_pointer(valid=True)
+        #     loss_epoch = 0
+        #
+        #     # writer2 = tf.summary.FileWriter('save/validation')
+        #     writer.add_graph(sess.graph)
+        #
+        #     for b in range(data_loader.num_batches):
+        #
+        #         # Get the source, target and dataset data for the next batch
+        #         # x, y are input and target data which are lists containing numpy arrays of size seq_length x maxNumPeds x 3
+        #         # d is the list of dataset indices from which each batch is generated (used to differentiate between datasets)
+        #         x, y, d = data_loader.next_valid_batch()
+        #
+        #         # variable to store the loss for this batch
+        #         loss_batch = 0
+        #
+        #         # For each sequence in the batch
+        #         for batch in range(data_loader.batch_size):
+        #             # x_batch, y_batch and d_batch contains the source, target and dataset index data for
+        #             # seq_length long consecutive frames in the dataset
+        #             # x_batch, y_batch would be numpy arrays of size seq_length x maxNumPeds x 3
+        #             # d_batch would be a scalar identifying the dataset from which this sequence is extracted
+        #             x_batch, y_batch, d_batch = x[batch], y[batch], d[batch]
+        #
+        #             if d_batch == 0 and datasets[0] == 0:
+        #                 dataset_data = [640, 480]
+        #             else:
+        #                 dataset_data = [720, 576]
+        #
+        #             grid_batch = getSequenceGridMask(x_batch, dataset_data, args.neighborhood_size, args.grid_size)
+        #
+        #             # Feed the source, target data
+        #             feed = {model.input_data: x_batch, model.target_data: y_batch, model.grid_data: grid_batch}
+        #
+        #             # train_loss, s = sess.run([model.cost, model.summ], feed)
+        #             # writer2.add_summary(s, b)
+        #             train_loss = sess.run(model.cost, feed)
+        #             loss_batch += train_loss
+        #
+        #         loss_batch = loss_batch / data_loader.batch_size
+        #         loss_epoch += loss_batch
+        #         test_cost = tf.Summary(value=[tf.Summary.Value(tag="TestCost", simple_value=loss_batch)])
+        #         writer.add_summary(test_cost, e * data_loader.num_batches + b)
+        #
+        #         # print 'Validation Batch number ' + str(b)
+        #
+        #     loss_epoch /= data_loader.valid_num_batches
+        #
+        #     # Update best validation loss until now
+        #     if loss_epoch < best_val_loss:
+        #         best_val_loss = loss_epoch
+        #         best_epoch = e
+        #
+        #     print('(epoch {}), valid_loss = {:.3f}'.format(e, loss_epoch))
+        #     print 'Best epoch', best_epoch, 'Best validation loss', best_val_loss
+        #     log_file_curve.write(str(loss_epoch)+'\n')
+        #     print '*****************'
+        #
+        #     # Save the model after each epoch
+        #     print 'Saving model'
+        #     checkpoint_path = os.path.join(save_directory, 'social_model.ckpt')
+        #     saver.save(sess, checkpoint_path, global_step=e)
+        #     print("model saved to {}".format(checkpoint_path))
+        #
+        # print 'Best epoch', best_epoch, 'Best validation loss', best_val_loss
+        # log_file.write(str(best_epoch)+','+str(best_val_loss))
 
         # CLose logging files
         log_file.close()

@@ -348,7 +348,6 @@ class SocialModel():
         return [z_mux, z_muy, z_sx, z_sy, z_corr]
 
     def getSocialTensor(self, current_frame_data, grid_frame_data, output_states):
-        # TODO include obs_map
         '''
         Computes the social tensor for all the maxNumPeds in the frame
         params:
