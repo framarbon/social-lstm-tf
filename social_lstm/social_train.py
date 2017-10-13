@@ -166,7 +166,8 @@ def train(args):
         start = time.time()
         try:
             while not coord.should_stop():
-                feed = {model.input_data: x_batch, model.target_data: y_batch, model.grid_data: grid_batch}
+                x, y, grid, d = sess.run([x_batch, y_batch, grid_batch, d_batch])
+                feed = {model.input_data: x, model.target_data: y, model.grid_data: grid}
                 loss_batch, _ = sess.run([model.cost, model.train_op], feed)
                 train_cost = tf.Summary(value=[tf.Summary.Value(tag="TrainingCost", simple_value=loss_batch)])
                 writer.add_summary(train_cost, counter)
