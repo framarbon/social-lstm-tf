@@ -391,11 +391,12 @@ class SocialModel():
                     # Pooling the ROI into the grid size
                     tensor_obs_map_ped = tf.reshape(obs_map_ped, [1, self.args.neighborhood_size, self.args.neighborhood_size, 1])
                     cell_size = self.args.neighborhood_size/self.args.grid_size
-                    pool = tf.cast(tf.nn.pool(input=tensor_obs_map_ped,
+                    tensor_float = tf.cast(tensor_obs_map_ped,tf.float32)
+                    pool = tf.nn.pool(input=tensor_float,
                                       window_shape=[cell_size, cell_size],
                                       strides=[cell_size, cell_size],
                                       padding='SAME',
-                                      pooling_type="AVG"), tf.float32)
+                                      pooling_type="AVG")
                     pool_grid = tf.reshape(pool, [self.args.grid_size*self.args.grid_size, 1])
 
                     with tf.name_scope("obstacle_embeddings"):
