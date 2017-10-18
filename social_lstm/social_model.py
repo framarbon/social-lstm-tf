@@ -387,7 +387,7 @@ class SocialModel():
 
                     # ROI o the obstacle map centered at ped
                     obs_map_ped = tf.slice(self.obs_map, origin_grid_ped,
-                                           [self.args.neighborhood_size,self.args.neighborhood_size])
+                                           [self.args.neighborhood_size, self.args.neighborhood_size])
                     # Pooling the ROI into the grid size
                     tensor_obs_map_ped = tf.reshape(obs_map_ped, [1, self.args.neighborhood_size, self.args.neighborhood_size, 1])
                     cell_size = self.args.neighborhood_size/self.args.grid_size
