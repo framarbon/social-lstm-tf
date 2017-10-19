@@ -164,9 +164,7 @@ def train(args):
 
                     grid_batch = getSequenceGridMask(x_batch, dataset_data, args.neighborhood_size, args.grid_size)
 
-                    print "TEST"
                     # Feed the source, target data
-                    print x_batch
                     feed = {model.input_data: x_batch, model.target_data: y_batch,
                             model.grid_data: grid_batch, model.map_index: [d_batch]}
 
