@@ -41,10 +41,8 @@ class SocialModel():
 
         # Flag to determine whether static obstacles are considered
         self.obs_map = []
-        if len(args.map) > 0:
-            # TODO: extract the obs_map from each dataset in social_utils
-            map_file = open(args.map,'r')
-            self.obs_map = np.array(pickle.load(map_file))
+        if len(args.obs_maps) > 0:
+            self.obs_map = np.array(args.obs_maps)
             print 'OBSTACLE MAP ENABLED'
 
         # NOTE : For now assuming, batch_size is always 1. That is the input
@@ -65,6 +63,9 @@ class SocialModel():
         # target data would be the same format as input_data except with
         # one time-step ahead
         self.target_data = tf.placeholder(tf.float32, [args.seq_length, args.maxNumPeds, 3], name="target_data")
+
+        # index of the obstacle map
+        self.map_index = tf.placeholder(tf.int32, 1, name="map_index")
 
         # Grid data would be a binary matrix which encodes whether a pedestrian is present in
         # a grid cell of other pedestrian
@@ -348,7 +349,6 @@ class SocialModel():
         return [z_mux, z_muy, z_sx, z_sy, z_corr]
 
     def getSocialTensor(self, current_frame_data, grid_frame_data, output_states):
-        # TODO include obs_map
         '''
         Computes the social tensor for all the maxNumPeds in the frame
         params:
@@ -368,7 +368,8 @@ class SocialModel():
         # Squeeze tensors to form MNP x (GS**2) matrices
         grid_frame_ped_data = [tf.squeeze(input_, [0]) for input_ in grid_frame_ped_data]
         # Dimensions occupancy map (height, width)
-        dimensions = self.obs_map.shape
+        obs_map = tf.gather_nd(self.obs_map,[[self.map_index]])
+        dimensions = obs_map.shape
 
         # For each pedestrian
         for ped in range(self.args.maxNumPeds):
@@ -377,26 +378,28 @@ class SocialModel():
 
                 social_tensor_ped = tf.matmul(tf.transpose(grid_frame_ped_data[ped]), hidden_states)
                 # Compute the static obstacles tensor
-                if len(self.obs_map) > 0:
+                # TODO include condition for not having the obstacle map
+                if True:
                     position_ped = tf.squeeze(tf.slice(current_frame_data, [ped, 1], [1, 2]))  # Tensor of shape (1,2)
-                    global_position_ped = tf.cast([tf.round(dimensions[1] * (position_ped[1] + 1) / 2),
-                                           tf.round(dimensions[0] * (position_ped[0] + 1) / 2)], tf.int32)
+                    global_position_ped = tf.cast([tf.round(tf.scalar_mul(tf.cast(dimensions[1]/2,tf.float32), position_ped[1] + 1)),
+                                           tf.round(tf.scalar_mul(tf.cast(dimensions[0]/2.0, tf.float32), position_ped[0] + 1))], tf.int32)
                     # Origin and end corners of the grid around the ped
                     origin_grid_ped = tf.add(global_position_ped, tf.negative(self.args.neighborhood_size / 2))
                     # end_grid_ped = tf.add(global_position_ped, self.args.neighborhood_size / 2.0)
                     # obs_map_ped = self.obs_map[origin_grid_ped[0]:end_grid_ped[0], origin_grid_ped[1]:end_grid_ped[1]]
 
                     # ROI o the obstacle map centered at ped
-                    obs_map_ped = tf.slice(self.obs_map, origin_grid_ped,
-                                           [self.args.neighborhood_size,self.args.neighborhood_size])
+                    obs_map_ped = tf.slice(tf.squeeze(obs_map), origin_grid_ped,
+                                           [self.args.neighborhood_size, self.args.neighborhood_size])
                     # Pooling the ROI into the grid size
                     tensor_obs_map_ped = tf.reshape(obs_map_ped, [1, self.args.neighborhood_size, self.args.neighborhood_size, 1])
                     cell_size = self.args.neighborhood_size/self.args.grid_size
-                    pool = tf.cast(tf.nn.pool(input=tensor_obs_map_ped,
+                    tensor_float = tf.cast(tensor_obs_map_ped, tf.float32)
+                    pool = tf.nn.pool(input=tensor_float,
                                       window_shape=[cell_size, cell_size],
                                       strides=[cell_size, cell_size],
                                       padding='SAME',
-                                      pooling_type="AVG"), tf.float32)
+                                      pooling_type="AVG")
                     pool_grid = tf.reshape(pool, [self.args.grid_size*self.args.grid_size, 1])
 
                     with tf.name_scope("obstacle_embeddings"):

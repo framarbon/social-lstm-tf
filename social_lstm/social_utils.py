@@ -17,7 +17,7 @@ import random
 # sequence.
 class SocialDataLoader():
 
-    def __init__(self, batch_size=50, seq_length=5, maxNumPeds=40, datasets=[0, 1, 2, 3, 4], forcePreProcess=False, infer=False):
+    def __init__(self, batch_size=50, seq_length=5, maxNumPeds=40, datasets=[2, 3, 4], forcePreProcess=False, infer=False):
         '''
         Initialiser function for the SocialDataLoader class
         params:
@@ -85,10 +85,12 @@ class SocialDataLoader():
         # Each list would contain the frameIds of all the frames in the dataset
         frameList_data = []
         # numPeds_data would be a list of lists corresponding to each dataset
-        # Ech list would contain the number of pedestrians in each frame in the dataset
+        # Each list would contain the number of pedestrians in each frame in the dataset
         numPeds_data = []
         # Index of the current dataset
         dataset_index = 0
+        # Obstacle map information of each dataset
+        map_data = []
 
         # For each dataset
         for directory in data_dirs:
@@ -98,6 +100,12 @@ class SocialDataLoader():
             file_path = os.path.join(directory, 'pixel_pos_interpolate.csv')
             # Load the data from the csv file
             data = np.genfromtxt(file_path, delimiter=',')
+
+            # Define path of the obstacle map of the current dataset
+            map_path = os.path.join(directory, 'obs_map.pkl')
+            with open(map_path, 'rb') as f:
+                map = pickle.load(f)
+            map_data.append(map)
 
             # Frame IDs of the frames in the current dataset
             frameList = np.unique(data[0, :]).tolist()
@@ -159,7 +167,7 @@ class SocialDataLoader():
 
         # Save the tuple (all_frame_data, frameList_data, numPeds_data) in the pickle file
         f = open(data_file, "wb")
-        pickle.dump((all_frame_data, frameList_data, numPeds_data, valid_frame_data), f, protocol=2)
+        pickle.dump((all_frame_data, frameList_data, numPeds_data, valid_frame_data, map_data), f, protocol=2)
         f.close()
 
     def load_preprocessed(self, data_file):
@@ -178,6 +186,9 @@ class SocialDataLoader():
         self.frameList = self.raw_data[1]
         self.numPedsList = self.raw_data[2]
         self.valid_data = self.raw_data[3]
+        self.obs_maps = []
+        if len(self.raw_data) > 4:
+            self.obs_maps = self.raw_data[4]
         counter = 0
         valid_counter = 0
 
@@ -423,3 +434,6 @@ class SocialDataLoader():
         else:
             self.valid_dataset_pointer = 0
             self.valid_frame_pointer = 0
+
+    def get_obs_map(self):
+        return self.obs_maps

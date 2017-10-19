@@ -71,20 +71,22 @@ def main():
     parser.add_argument('--writer', type=str, default='training',
                         help='L2 regularization parameter')
     # Obstacle Map
-    parser.add_argument('--map', type=str, default='',
+    parser.add_argument('--obs_maps', type=list, default=[],
                         help='Obstacle Map file')
     args = parser.parse_args()
     train(args)
 
 
 def train(args):
-    datasets = range(4)
+    datasets = [2,3,4]
     # Remove the leaveDataset from datasets
     datasets.remove(args.leaveDataset)
     # datasets = [0]
 
     # Create the SocialDataLoader object
     data_loader = SocialDataLoader(args.batch_size, args.seq_length, args.maxNumPeds, datasets, forcePreProcess=True, infer=False)
+
+    args.obs_maps = data_loader.get_obs_map()
 
     # Log directory
     log_directory = 'log/'
@@ -162,8 +164,11 @@ def train(args):
 
                     grid_batch = getSequenceGridMask(x_batch, dataset_data, args.neighborhood_size, args.grid_size)
 
+                    print "TEST"
+                    print d_batch
                     # Feed the source, target data
-                    feed = {model.input_data: x_batch, model.target_data: y_batch, model.grid_data: grid_batch}
+                    feed = {model.input_data: x_batch, model.target_data: y_batch,
+                            model.grid_data: grid_batch, model.map_index: d_batch}
 
                     # train_loss, _, s = sess.run([model.cost, model.train_op, model.summ], feed)
                     # writer.add_summary(s, batch)
