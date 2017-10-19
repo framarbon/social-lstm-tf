@@ -382,8 +382,9 @@ class SocialModel():
                 if True:
                     position_ped = tf.squeeze(tf.slice(current_frame_data, [ped, 1], [1, 2]))  # Tensor of shape (1,2)
                     position_ped = tf.add(position_ped,[1,1])
-                    global_position_ped = tf.cast([tf.round(tf.scalar_mul(tf.cast(dimensions[1]*0.5, tf.float32), position_ped[1])),
-                                           tf.round(tf.scalar_mul(tf.cast(dimensions[0]*0.5, tf.float32), position_ped[0]))], tf.int32)
+                    dimensions = dimensions*0.5
+                    global_position_ped = tf.cast([tf.round(tf.scalar_mul(tf.cast(dimensions[1], tf.float32), position_ped[1])),
+                                           tf.round(tf.scalar_mul(tf.cast(dimensions[0], tf.float32), position_ped[0]))], tf.int32)
                     # Origin corner of the grid around the ped
                     origin_grid_ped = tf.subtract(global_position_ped, self.args.neighborhood_size / 2)
                     # end_grid_ped = tf.add(global_position_ped, self.args.neighborhood_size / 2.0)
