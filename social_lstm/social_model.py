@@ -368,8 +368,8 @@ class SocialModel():
         # Squeeze tensors to form MNP x (GS**2) matrices
         grid_frame_ped_data = [tf.squeeze(input_, [0]) for input_ in grid_frame_ped_data]
         # Dimensions occupancy map (height, width)
-        obs_map = tf.gather_nd(self.obs_map,[[self.map_index]])
-        dimensions = obs_map.shape
+        obs_map = tf.gather_nd(self.obs_map, [[self.map_index]])
+        dimensions = obs_map.get_shape().as_list()
 
         # For each pedestrian
         for ped in range(self.args.maxNumPeds):
@@ -382,9 +382,9 @@ class SocialModel():
                 if True:
                     position_ped = tf.squeeze(tf.slice(current_frame_data, [ped, 1], [1, 2]))  # Tensor of shape (1,2)
                     position_ped = tf.add(position_ped,[1,1])
-                    dimensions = dimensions*0.5
-                    global_position_ped = tf.cast([tf.round(tf.scalar_mul(tf.cast(dimensions[1], tf.float32), position_ped[1])),
-                                           tf.round(tf.scalar_mul(tf.cast(dimensions[0], tf.float32), position_ped[0]))], tf.int32)
+                    # dimensions = tf.cast(tf.scalar_mul(0.5, dimensions), tf.float32)
+                    global_position_ped = tf.cast([tf.round(tf.scalar_mul(dimensions[1]*0.5, position_ped[1])),
+                                           tf.round(tf.scalar_mul(dimensions[0]*0.5, position_ped[0]))], tf.int32)
                     # Origin corner of the grid around the ped
                     origin_grid_ped = tf.subtract(global_position_ped, self.args.neighborhood_size / 2)
                     # end_grid_ped = tf.add(global_position_ped, self.args.neighborhood_size / 2.0)
