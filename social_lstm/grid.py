@@ -7,7 +7,7 @@ Date : 29th October 2016
 import numpy as np
 
 
-def getGridMask(frame, dimensions, neighborhood_size, grid_sizezzz):
+def getGridMask(frame, dimensions, neighborhood_size, grid_size):
     '''
     This function computes the binary mask that represents the
     occupancy of each ped in the other's grid
