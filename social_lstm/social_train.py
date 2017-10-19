@@ -165,10 +165,9 @@ def train(args):
                     grid_batch = getSequenceGridMask(x_batch, dataset_data, args.neighborhood_size, args.grid_size)
 
                     print "TEST"
-                    print d_batch
                     # Feed the source, target data
                     feed = {model.input_data: x_batch, model.target_data: y_batch,
-                            model.grid_data: grid_batch, model.map_index: d_batch}
+                            model.grid_data: grid_batch, model.map_index: [d_batch]}
 
                     # train_loss, _, s = sess.run([model.cost, model.train_op, model.summ], feed)
                     # writer.add_summary(s, batch)

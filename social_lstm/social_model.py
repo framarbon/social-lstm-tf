@@ -65,7 +65,7 @@ class SocialModel():
         self.target_data = tf.placeholder(tf.float32, [args.seq_length, args.maxNumPeds, 3], name="target_data")
 
         # index of the obstacle map
-        self.map_index = tf.placeholder(tf.int32, 1, name="map_index")
+        self.map_index = tf.placeholder(tf.int32, [1], name="map_index")
 
         # Grid data would be a binary matrix which encodes whether a pedestrian is present in
         # a grid cell of other pedestrian
@@ -126,8 +126,8 @@ class SocialModel():
 
             current_frame_data = frame  # MNP x 3 tensor
             current_grid_frame_data = grid_frame_data[seq]  # MNP x MNP x (GS**2) tensor
-            social_tensor = self.getSocialTensor(current_frame_data, current_grid_frame_data,
-                                                 self.output_states)  # MNP x (GS**2 * RNN_size)
+            # MNP x (GS**2 * RNN_size)
+            social_tensor = self.getSocialTensor(current_frame_data, current_grid_frame_data, self.output_states)
             # NOTE: Using a tensor of zeros as the social tensor
             # social_tensor = tf.zeros([args.maxNumPeds, args.grid_size*args.grid_size*args.rnn_size])
 
@@ -381,16 +381,16 @@ class SocialModel():
                 # TODO include condition for not having the obstacle map
                 if True:
                     position_ped = tf.squeeze(tf.slice(current_frame_data, [ped, 1], [1, 2]))  # Tensor of shape (1,2)
-                    global_position_ped = tf.cast([tf.round(tf.scalar_mul(tf.cast(dimensions[1]/2,tf.float32), position_ped[1] + 1)),
-                                           tf.round(tf.scalar_mul(tf.cast(dimensions[0]/2.0, tf.float32), position_ped[0] + 1))], tf.int32)
-                    # Origin and end corners of the grid around the ped
-                    origin_grid_ped = tf.add(global_position_ped, tf.negative(self.args.neighborhood_size / 2))
+                    position_ped = tf.add(position_ped,[1,1])
+                    global_position_ped = tf.cast([tf.round(tf.scalar_mul(tf.cast(dimensions[1]*0.5, tf.float32), position_ped[1])),
+                                           tf.round(tf.scalar_mul(tf.cast(dimensions[0]*0.5, tf.float32), position_ped[0]))], tf.int32)
+                    # Origin corner of the grid around the ped
+                    origin_grid_ped = tf.subtract(global_position_ped, self.args.neighborhood_size / 2)
                     # end_grid_ped = tf.add(global_position_ped, self.args.neighborhood_size / 2.0)
                     # obs_map_ped = self.obs_map[origin_grid_ped[0]:end_grid_ped[0], origin_grid_ped[1]:end_grid_ped[1]]
 
                     # ROI o the obstacle map centered at ped
-                    obs_map_ped = tf.slice(tf.squeeze(obs_map), origin_grid_ped,
-                                           [self.args.neighborhood_size, self.args.neighborhood_size])
+                    obs_map_ped = tf.slice(tf.squeeze(obs_map), origin_grid_ped, [self.args.neighborhood_size, self.args.neighborhood_size])
                     # Pooling the ROI into the grid size
                     tensor_obs_map_ped = tf.reshape(obs_map_ped, [1, self.args.neighborhood_size, self.args.neighborhood_size, 1])
                     cell_size = self.args.neighborhood_size/self.args.grid_size
