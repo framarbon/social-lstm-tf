@@ -17,7 +17,7 @@ import random
 # sequence.
 class SocialDataLoader():
 
-    def __init__(self, batch_size=50, seq_length=5, maxNumPeds=40, datasets=[2, 3, 4], forcePreProcess=False, infer=False):
+    def __init__(self, batch_size=50, seq_length=5, maxNumPeds=40, datasets=[2, 3, 4], forcePreProcess=False, infer=False, valid_dataset = -1):
         '''
         Initialiser function for the SocialDataLoader class
         params:
@@ -48,7 +48,7 @@ class SocialDataLoader():
         self.seq_length = seq_length
 
         # Validation arguments
-        self.val_fraction = 0.2
+        self.valid_dataset = valid_dataset
 
         # Define the path in which the process data would be stored
         data_file = os.path.join(self.data_dir, "social-trajectories.cpkl")
@@ -93,7 +93,7 @@ class SocialDataLoader():
         map_data = []
 
         # For each dataset
-        for directory in data_dirs:
+        for index, directory in enumerate(data_dirs):
 
             # Define path of the csv file of the current dataset
             # file_path = os.path.join(directory, 'pixel_pos.csv')
@@ -111,10 +111,10 @@ class SocialDataLoader():
             frameList = np.unique(data[0, :]).tolist()
             # Number of frames
             numFrames = len(frameList)
-            if self.infer:
-                valid_numFrames = 0
-            else:
-                valid_numFrames = int(numFrames * self.val_fraction)
+
+            valid_numFrames = 0
+            if self.valid_dataset == index:
+                valid_numFrames = numFrames
 
             # Add the list of frameIDs to the frameList_data
             frameList_data.append(frameList)
@@ -154,7 +154,10 @@ class SocialDataLoader():
 
                     # Add their pedID, x, y to the row of the numpy array
                     pedsWithPos.append([ped, current_x, current_y])
+                #     TODO workaround remove elements outside maxnumped
 
+                #TODO sort by distance and clip to MaxnumPed
+                # save norm to the robot? and sort it using zip
                 if (ind >= valid_numFrames) or (self.infer):
                     # Add the details of all the peds in the current frame to all_frame_data
                     all_frame_data[dataset_index][ind - valid_numFrames, 0:len(pedsList), :] = np.array(pedsWithPos)

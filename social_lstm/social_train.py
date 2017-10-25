@@ -80,11 +80,11 @@ def main():
 def train(args):
     datasets = [2,3,4]
     # Remove the leaveDataset from datasets
-    datasets.remove(args.leaveDataset)
+    valid_data=datasets.index(args.leaveDataset)
     # datasets = [0]
 
     # Create the SocialDataLoader object
-    data_loader = SocialDataLoader(args.batch_size, args.seq_length, args.maxNumPeds, datasets, forcePreProcess=True, infer=False)
+    data_loader = SocialDataLoader(args.batch_size, args.seq_length, args.maxNumPeds, datasets, forcePreProcess=True, infer=False, valid_dataset=valid_data)
 
     args.obs_maps = data_loader.get_obs_map()
 

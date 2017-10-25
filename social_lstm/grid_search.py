@@ -62,7 +62,7 @@ class TrainInput():
         self.embedding_size = 64
         self.neighborhood_size = 32
         self.grid_size = 4
-        self.maxNumPeds = 20
+        self.maxNumPeds = 52
         self.leaveDataset = 4
         self.lambda_param = 0.0005
         self.writer = "training"
