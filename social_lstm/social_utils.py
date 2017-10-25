@@ -307,7 +307,7 @@ class SocialDataLoader():
                 for seq in range(self.seq_length):
                     sseq_frame_data = seq_source_frame_data[seq, :]
                     tseq_frame_data = seq_target_frame_data[seq, :]
-                    for ped in range(numUniquePeds):
+                    for ped in range(np.minimum(numUniquePeds, self.maxNumPeds)):
                         pedID = pedID_list[ped]
 
                         if pedID == 0:
