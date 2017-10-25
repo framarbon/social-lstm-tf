@@ -370,7 +370,7 @@ class SocialModel():
         # Dimensions occupancy map (height, width)
         obs_map = tf.squeeze(tf.gather_nd(self.obs_map, [[self.map_index]]))
         dimensions = obs_map.get_shape().as_list()
-        # dimensions = [x*0.5 for x in dimensions]
+        dimensions = [x*0.5 for x in dimensions]
         half_n = self.args.neighborhood_size/2
         obs_map = tf.pad(obs_map, [[half_n, half_n], [half_n, half_n]], "CONSTANT")
         print dimensions
@@ -384,11 +384,16 @@ class SocialModel():
                 # Compute the static obstacles tensor
                 # TODO include condition for not having the obstacle map
                 if True:
-                    position_ped = tf.squeeze(tf.slice(current_frame_data, [ped, 1], [1, 2]))  # Tensor of shape (1,2)
-                    position_ped = tf.add(position_ped, tf.ones([2], tf.float32))
-                    global_position_ped = tf.cast(tf.rint([tf.scalar_mul(dimensions[0]*0.5, position_ped[0]),
-                                                   tf.scalar_mul(dimensions[1]*0.5, position_ped[1])]), tf.int32)
-                    global_position_ped = tf.concat(global_position_ped,0)
+                    # position_ped = tf.squeeze(tf.slice(current_frame_data, [ped, 1], [1, 2]))  # Tensor of shape (1,2)
+                    # position_ped = tf.add(position_ped, tf.ones([2], tf.float32))
+                    # global_position_ped = tf.cast(tf.rint([tf.scalar_mul(dimensions[0]*0.5, position_ped[0]),
+                    #                                tf.scalar_mul(dimensions[1]*0.5, position_ped[1])]), tf.int32)
+                    # global_position_ped = tf.concat(global_position_ped,0)
+
+                    position_ped = tf.slice(current_frame_data, [ped, 1], [1, 2])  # Tensor of shape (1,2)
+                    position_ped = tf.add(position_ped, tf.ones([1, 2], tf.float32))
+                    global_position_ped = tf.rint(tf.matmul(position_ped, [[dimensions[0], 0], [0, dimensions[1]]]))
+                    global_position_ped = tf.squeeze(tf.cast(global_position_ped, tf.int32))
 
                     # Origin corner of the grid around the ped
                     # origin_grid_ped = tf.subtract(global_position_ped, self.args.neighborhood_size / 2)
