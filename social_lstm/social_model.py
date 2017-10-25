@@ -246,16 +246,16 @@ class SocialModel():
                                                initializer=tf.truncated_normal_initializer(stddev=0.1))
             self.embedding_b = tf.get_variable("embedding_b", [args.embedding_size],
                                                initializer=tf.constant_initializer(0.1))
-            tf.summary.histogram("weights", self.embedding_w)
-            tf.summary.histogram("biases", self.embedding_b)
+            # tf.summary.histogram("weights", self.embedding_w)
+            # tf.summary.histogram("biases", self.embedding_b)
 
         with tf.variable_scope("obstacle_embedding"):
             self.embedding_o_w = tf.get_variable("embedding_o_w", [1, args.embedding_size],
                                                initializer=tf.truncated_normal_initializer(stddev=0.1))
             self.embedding_o_b = tf.get_variable("embedding_o_b", [args.embedding_size],
                                                initializer=tf.constant_initializer(0.1))
-            tf.summary.histogram("weights", self.embedding_o_w)
-            tf.summary.histogram("biases", self.embedding_o_b)
+            # tf.summary.histogram("weights", self.embedding_o_w)
+            # tf.summary.histogram("biases", self.embedding_o_b)
 
         # Define variables for the social tensor embedding layer
         with tf.variable_scope("tensor_embedding"):
@@ -264,16 +264,16 @@ class SocialModel():
                                                  initializer=tf.truncated_normal_initializer(stddev=0.1))
             self.embedding_t_b = tf.get_variable("embedding_t_b", [args.embedding_size],
                                                  initializer=tf.constant_initializer(0.1))
-            tf.summary.histogram("weights", self.embedding_t_w)
-            tf.summary.histogram("biases", self.embedding_t_b)
+            # tf.summary.histogram("weights", self.embedding_t_w)
+            # tf.summary.histogram("biases", self.embedding_t_b)
 
         # Define variables for the output linear layer
         with tf.variable_scope("output_layer"):
             self.output_w = tf.get_variable("output_w", [args.rnn_size, self.output_size],
                                             initializer=tf.truncated_normal_initializer(stddev=0.1))
             self.output_b = tf.get_variable("output_b", [self.output_size], initializer=tf.constant_initializer(0.1))
-            tf.summary.histogram("weights", self.output_w)
-            tf.summary.histogram("biases", self.output_b)
+            # tf.summary.histogram("weights", self.output_w)
+            # tf.summary.histogram("biases", self.output_b)
 
     def tf_2d_normal(self, x, y, mux, muy, sx, sy, rho):
         '''
@@ -373,7 +373,6 @@ class SocialModel():
         dimensions = [x*0.5 for x in dimensions]
         half_n = self.args.neighborhood_size/2
         obs_map = tf.pad(obs_map, [[half_n, half_n], [half_n, half_n]], "CONSTANT")
-        print dimensions
 
         # For each pedestrian
         for ped in range(self.args.maxNumPeds):
@@ -392,6 +391,8 @@ class SocialModel():
 
                     position_ped = tf.slice(current_frame_data, [ped, 1], [1, 2])  # Tensor of shape (1,2)
                     position_ped = tf.add(position_ped, tf.ones([1, 2], tf.float32))
+                    position_ped = tf.clip_by_value(position_ped, 0., 1.)
+
                     global_position_ped = tf.rint(tf.matmul(position_ped, [[dimensions[0], 0], [0, dimensions[1]]]))
                     global_position_ped = tf.squeeze(tf.cast(global_position_ped, tf.int32))
 
