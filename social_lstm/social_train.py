@@ -263,11 +263,11 @@ def train(args):
             log_file_curve.write(str(loss_epoch)+'\n')
             print '*****************'
 
-            # Save the model after each epoch
-            print 'Saving model'
-            checkpoint_path = os.path.join(save_directory, 'social_model.ckpt')
-            saver.save(sess, checkpoint_path, global_step=e)
-            print("model saved to {}".format(checkpoint_path))
+            # # Save the model after each epoch
+            # print 'Saving model'
+            # checkpoint_path = os.path.join(save_directory, 'social_model.ckpt')
+            # saver.save(sess, checkpoint_path, global_step=e)
+            # print("model saved to {}".format(checkpoint_path))
 
         print 'Best epoch', best_epoch, 'Best validation loss', best_val_loss
         log_file.write(str(best_epoch)+','+str(best_val_loss))
