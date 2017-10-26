@@ -1,11 +1,14 @@
 import tensorflow as tf
 from social_train import train
+import argparse
 
 
 class GridSearch:
 
-    def __init__(self, default=True):
+    def __init__(self, args=None, default=True):
 
+        if args is None:
+            args = []
         self.paramList = ["LR", "L2", "DR", "GC", "BS"]
         self.valueList = [[3E-3, 5E-4, 0.95, 10, 16]]
         if default:
@@ -16,7 +19,7 @@ class GridSearch:
 
         self.len = len(self.paramList)
 
-        inputs = TrainInput()
+        inputs = TrainInput(args.num_epochs)
 
         for values in self.valueList:
             # Initialize parameters
@@ -45,15 +48,15 @@ class GridSearch:
         return hstring
 
 
-class TrainInput():
-    def __init__(self):
+class TrainInput:
+    def __init__(self, num_epochs=1):
         self.rnn_size = 128
         self.num_layers = 1
         self.model = 'lstm'
         self.batch_size = 16
         self.seq_length = 12
         # self.num_epochs = 50
-        self.num_epochs = 1
+        self.num_epochs = num_epochs
         self.save_every = 400
         self.grad_clip = 10.
         self.learning_rate = 0.005
@@ -89,4 +92,65 @@ class TrainInput():
         self.leaveDataset = ds
 
 if __name__ == '__main__':
-    GSearch = GridSearch()
+    parser = argparse.ArgumentParser()
+    # # RNN size parameter (dimension of the output/hidden state)
+    # parser.add_argument('--rnn_size', type=int, default=128,
+    #                     help='size of RNN hidden state')
+    # # Number of layers parameter
+    # parser.add_argument('--num_layers', type=int, default=1,
+    #                     help='number of layers in the RNN')
+    # # Model currently not used. Only LSTM implemented
+    # # Type of recurrent unit parameter
+    # parser.add_argument('--model', type=str, default='lstm',
+    #                     help='rnn, gru, or lstm')
+    # # Size of each batch parameter
+    # parser.add_argument('--batch_size', type=int, default=16,
+    #                     help='minibatch size')
+    # # Length of sequence to be considered parameter
+    # parser.add_argument('--seq_length', type=int, default=12,
+    #                     help='RNN sequence length')
+    # Number of epochs parameter
+    parser.add_argument('--num_epochs', type=int, default=1,
+                        help='number of epochs')
+    # # Frequency at which the model should be saved parameter
+    # parser.add_argument('--save_every', type=int, default=400,
+    #                     help='save frequency')
+    # # Gradient value at which it should be clipped
+    # parser.add_argument('--grad_clip', type=float, default=10.,
+    #                     help='clip gradients at this value')
+    # # Learning rate parameter
+    # parser.add_argument('--learning_rate', type=float, default=0.005,
+    #                     help='learning rate')
+    # # Decay rate for the learning rate parameter
+    # parser.add_argument('--decay_rate', type=float, default=0.95,
+    #                     help='decay rate for rmsprop')
+    # # Dropout not implemented.
+    # # Dropout probability parameter
+    # parser.add_argument('--keep_prob', type=float, default=0.8,
+    #                     help='dropout keep probability')
+    # # Dimension of the embeddings parameter
+    # parser.add_argument('--embedding_size', type=int, default=64,
+    #                     help='Embedding dimension for the spatial coordinates')
+    # # Size of neighborhood to be considered parameter
+    # parser.add_argument('--neighborhood_size', type=int, default=32,
+    #                     help='Neighborhood size to be considered for social grid')
+    # # Size of the social grid parameter
+    # parser.add_argument('--grid_size', type=int, default=4,
+    #                     help='Grid size of the social grid')
+    # # Maximum number of pedestrians to be considered
+    # parser.add_argument('--maxNumPeds', type=int, default=40,
+    #                     help='Maximum Number of Pedestrians')
+    # # The leave out dataset
+    # parser.add_argument('--leaveDataset', type=int, default=3,
+    #                     help='The dataset index to be left out in training')
+    # # Lambda regularization parameter (L2)
+    # parser.add_argument('--lambda_param', type=float, default=0.0005,
+    #                     help='L2 regularization parameter')
+    # # TensorBoard Writer name
+    # parser.add_argument('--writer', type=str, default='training',
+    #                     help='L2 regularization parameter')
+    # # Obstacle Map
+    # parser.add_argument('--obs_maps', type=list, default=[],
+    #                     help='Obstacle Map file')
+    args = parser.parse_args()
+    GSearch = GridSearch(args)
