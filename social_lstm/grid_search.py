@@ -19,7 +19,7 @@ class GridSearch:
 
         self.len = len(self.paramList)
 
-        inputs = TrainInput(args.num_epochs)
+        inputs = TrainInput(args.num_epochs, args.maxNumPeds)
 
         for values in self.valueList:
             # Initialize parameters
@@ -49,7 +49,7 @@ class GridSearch:
 
 
 class TrainInput:
-    def __init__(self, num_epochs=1):
+    def __init__(self, num_epochs=1, maxNumPeds=40):
         self.rnn_size = 128
         self.num_layers = 1
         self.model = 'lstm'
@@ -65,7 +65,7 @@ class TrainInput:
         self.embedding_size = 64
         self.neighborhood_size = 32
         self.grid_size = 4
-        self.maxNumPeds = 52
+        self.maxNumPeds = maxNumPeds
         self.leaveDataset = 4
         self.lambda_param = 0.0005
         self.writer = "training"
@@ -137,9 +137,9 @@ if __name__ == '__main__':
     # # Size of the social grid parameter
     # parser.add_argument('--grid_size', type=int, default=4,
     #                     help='Grid size of the social grid')
-    # # Maximum number of pedestrians to be considered
-    # parser.add_argument('--maxNumPeds', type=int, default=40,
-    #                     help='Maximum Number of Pedestrians')
+    # Maximum number of pedestrians to be considered
+    parser.add_argument('--maxNumPeds', type=int, default=55,
+                        help='Maximum Number of Pedestrians')
     # # The leave out dataset
     # parser.add_argument('--leaveDataset', type=int, default=3,
     #                     help='The dataset index to be left out in training')
