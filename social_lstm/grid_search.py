@@ -1,6 +1,7 @@
 import tensorflow as tf
 from social_train import train
 import argparse
+import numpy as np
 
 
 class GridSearch:
@@ -69,6 +70,7 @@ class TrainInput:
         self.leaveDataset = 4
         self.lambda_param = 0.0005
         self.writer = "training"
+        self.dist_map = self.get_distMap()
 
     def set_learning_rate(self, lr):
         self.learning_rate = lr
@@ -90,6 +92,21 @@ class TrainInput:
 
     def set_leaveDataset(self, ds):
         self.leaveDataset = ds
+
+    def get_distMap(self):
+        # Neighborhood size
+        ns = self.neighborhood_size
+        # Half Neighborhood size
+        hns = ns/2
+        distMap = np.zeros([ns,ns],dtype=np.float)
+        for x in range(ns):
+            xnorm = (x-hns)**2
+            for y in range(ns):
+                ynorm = (y-hns)**2
+                totalnorm = (xnorm+ynorm)
+                if totalnorm > 1e-5:
+                    distMap[x, y] = 1./totalnorm
+        return distMap
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser()
