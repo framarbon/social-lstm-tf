@@ -20,7 +20,7 @@ class GridSearch:
 
         self.len = len(self.paramList)
 
-        inputs = TrainInput(args.num_epochs, args.maxNumPeds)
+        inputs = TrainInput(args.num_epochs, args.maxNumPeds, args.save_path)
 
         for values in self.valueList:
             # Initialize parameters
@@ -50,7 +50,7 @@ class GridSearch:
 
 
 class TrainInput:
-    def __init__(self, num_epochs=1, maxNumPeds=40):
+    def __init__(self, num_epochs=1, maxNumPeds=40, save_path=""):
         self.rnn_size = 128
         self.num_layers = 1
         self.model = 'lstm'
@@ -71,6 +71,7 @@ class TrainInput:
         self.lambda_param = 0.0005
         self.writer = "training"
         self.dist_map = self.get_distMap()
+        self.save_path = save_path
 
     def set_learning_rate(self, lr):
         self.learning_rate = lr
@@ -110,6 +111,8 @@ class TrainInput:
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser()
+    parser.add_argument('--save_path', type=str, default="",
+                        help='Save path output files')
     # # RNN size parameter (dimension of the output/hidden state)
     # parser.add_argument('--rnn_size', type=int, default=128,
     #                     help='size of RNN hidden state')

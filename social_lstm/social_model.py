@@ -244,7 +244,7 @@ class SocialModel():
         self.train_op = optimizer.apply_gradients(zip(grads, tvars))
 
         # Merge all summmaries
-        self.summ = tf.summary.merge_all()
+        # self.summ = tf.summary.merge_all()
 
     def define_embedding_and_output_layers(self):
         # Define variables for the spatial coordinates embedding layer
