@@ -5,12 +5,9 @@ Author : Francisco Marquez bonilla
 Date : 6th September 2017
 '''
 
-import numpy as np
 import tensorflow as tf
-
 import os
 import pickle
-
 from social_model import SocialModel
 from grid import getSequenceGridMask
 

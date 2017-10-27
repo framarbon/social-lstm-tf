@@ -8,10 +8,8 @@ Date: 17th October 2016
 
 import tensorflow as tf
 import numpy as np
-import pickle
 from tensorflow.python.ops import rnn_cell
 from grid import getSequenceGridMask
-import pdb
 
 
 class SocialModel():
