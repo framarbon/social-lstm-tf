@@ -167,8 +167,6 @@ def train(args):
                     feed = {model.input_data: x_batch, model.target_data: y_batch,
                             model.grid_data: grid_batch, model.map_index: [d_batch]}
 
-                    # train_loss, _, s = sess.run([model.cost, model.train_op, model.summ], feed)
-                    # writer.add_summary(s, batch)
                     train_loss, _ = sess.run([model.cost, model.train_op], feed)
                     loss_batch += train_loss
 
@@ -176,12 +174,8 @@ def train(args):
                 loss_batch = loss_batch / data_loader.batch_size
                 loss_epoch += loss_batch
 
-                train_cost = tf.Summary(value=[tf.Summary.Value(tag="TrainingCost", simple_value=loss_batch)])
-                writer.add_summary(train_cost, e * data_loader.num_batches + b)
-                # summ = tf.summary.merge_all()
-                # writer.add_summary(s, b)
-                # print 'Printing Tensor'
-                # tf.Print(train_cost,[train_cost, tf.shape(train_cost)])
+                # train_cost = tf.Summary(value=[tf.Summary.Value(tag="TrainingCost", simple_value=loss_batch)])
+                # writer.add_summary(train_cost, e * data_loader.num_batches + b)
 
                 print(
                     "{}/{} (epoch {}), train_loss = {:.3f}, time/batch = {:.3f}"
@@ -199,6 +193,8 @@ def train(args):
                     print("model saved to {}".format(checkpoint_path))
                 '''
             loss_epoch /= data_loader.num_batches
+            train_cost = tf.Summary(value=[tf.Summary.Value(tag="TrainingCost", simple_value=loss_epoch)])
+            writer.add_summary(train_cost, e * data_loader.num_batches + b)
             log_file_curve.write(str(e)+','+str(loss_epoch)+',')
             print '*****************'
 
@@ -238,19 +234,17 @@ def train(args):
                     feed = {model.input_data: x_batch, model.target_data: y_batch,
                             model.grid_data: grid_batch, model.map_index: [d_batch]}
 
-                    # train_loss, s = sess.run([model.cost, model.summ], feed)
-                    # writer2.add_summary(s, b)
                     train_loss = sess.run(model.cost, feed)
                     loss_batch += train_loss
 
                 loss_batch = loss_batch / data_loader.batch_size
                 loss_epoch += loss_batch
-                test_cost = tf.Summary(value=[tf.Summary.Value(tag="TestCost", simple_value=loss_batch)])
-                writer.add_summary(test_cost, e * data_loader.num_batches + b)
-
-                # print 'Validation Batch number ' + str(b)
+                # test_cost = tf.Summary(value=[tf.Summary.Value(tag="TestCost", simple_value=loss_batch)])
+                # writer.add_summary(test_cost, e * data_loader.num_batches + b)
 
             loss_epoch /= data_loader.valid_num_batches
+            test_cost = tf.Summary(value=[tf.Summary.Value(tag="TestCost", simple_value=loss_epoch)])
+            writer.add_summary(test_cost, e * data_loader.num_batches + b)
 
             # Update best validation loss until now
             if loss_epoch < best_val_loss:
