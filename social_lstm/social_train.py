@@ -98,7 +98,7 @@ def train(args):
     log_file = open(os.path.join(log_directory, 'val.txt'), 'w')
 
     # Save directory
-    save_directory = 'save/'
+    save_directory = args.save_path+'save/'
     save_directory += str(args.leaveDataset) + '/'
     if not os.path.exists(save_directory):
         os.makedirs(save_directory)
@@ -264,6 +264,8 @@ def train(args):
 
         print 'Best epoch', best_epoch, 'Best validation loss', best_val_loss
         log_file.write(str(best_epoch)+','+str(best_val_loss))
+
+        tf.summary.merge_all()
 
         # CLose logging files
         log_file.close()
