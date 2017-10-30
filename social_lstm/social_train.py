@@ -78,8 +78,8 @@ def main():
 
 def train(args):
     datasets = [2,3,4]
-    # Remove the leaveDataset from datasets
-    valid_data=datasets.index(args.leaveDataset)
+    # Remove the 4th from datasets
+    valid_data=datasets.index(4)
     # datasets = [0]
 
     # Create the SocialDataLoader object
@@ -115,10 +115,10 @@ def train(args):
     with tf.Session() as sess:
         # Initialize all variables in the graph
         sess.run(tf.initialize_all_variables())
-        writer = tf.summary.FileWriter(save_directory+args.writer)
-        writer.add_graph(sess.graph)
+        # writer = tf.summary.FileWriter(save_directory+args.writer)
+        # writer.add_graph(sess.graph)
         # Initialize a saver that saves all the variables in the graph
-        saver = tf.train.Saver(tf.all_variables(), max_to_keep=None)
+        # saver = tf.train.Saver(tf.all_variables(), max_to_keep=None)
 
         # summary_writer = tf.train.SummaryWriter('/tmp/lstm/logs', graph_def=sess.graph_def)
         print 'Training begin'
@@ -193,8 +193,8 @@ def train(args):
                     print("model saved to {}".format(checkpoint_path))
                 '''
             loss_epoch /= data_loader.num_batches
-            train_cost = tf.Summary(value=[tf.Summary.Value(tag="TrainingCost", simple_value=loss_epoch)])
-            writer.add_summary(train_cost, e * data_loader.num_batches + b)
+            # train_cost = tf.Summary(value=[tf.Summary.Value(tag="TrainingCost", simple_value=loss_epoch)])
+            # writer.add_summary(train_cost, e * data_loader.num_batches + b)
             log_file_curve.write(str(e)+','+str(loss_epoch)+',')
             print '*****************'
 
@@ -202,8 +202,7 @@ def train(args):
             data_loader.reset_batch_pointer(valid=True)
             loss_epoch = 0
 
-            # writer2 = tf.summary.FileWriter('save/validation')
-            writer.add_graph(sess.graph)
+            # writer.add_graph(sess.graph)
 
             for b in range(data_loader.num_batches):
 
@@ -243,8 +242,8 @@ def train(args):
                 # writer.add_summary(test_cost, e * data_loader.num_batches + b)
 
             loss_epoch /= data_loader.valid_num_batches
-            test_cost = tf.Summary(value=[tf.Summary.Value(tag="TestCost", simple_value=loss_epoch)])
-            writer.add_summary(test_cost, e * data_loader.num_batches + b)
+            # test_cost = tf.Summary(value=[tf.Summary.Value(tag="TestCost", simple_value=loss_epoch)])
+            # writer.add_summary(test_cost, e * data_loader.num_batches + b)
 
             # Update best validation loss until now
             if loss_epoch < best_val_loss:
@@ -265,7 +264,7 @@ def train(args):
         print 'Best epoch', best_epoch, 'Best validation loss', best_val_loss
         log_file.write(str(best_epoch)+','+str(best_val_loss))
 
-        tf.summary.merge_all()
+        # tf.summary.merge_all()
 
         # CLose logging files
         log_file.close()
