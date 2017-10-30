@@ -19,7 +19,7 @@ class GridSearch:
 
         self.len = len(self.paramList)
 
-        inputs = TrainInput(args.num_epochs, args.maxNumPeds, args.save_path)
+        inputs = TrainInput(args.num_epochs, args.maxNumPeds, args.save_path, args.leaveDataset)
 
         for values in self.valueList:
             # Initialize parameters
@@ -49,7 +49,7 @@ class GridSearch:
 
 
 class TrainInput:
-    def __init__(self, num_epochs=1, maxNumPeds=40, save_path=""):
+    def __init__(self, num_epochs=1, maxNumPeds=40, save_path="", leaveDataset=4):
         self.rnn_size = 128
         self.num_layers = 1
         self.model = 'lstm'
@@ -66,7 +66,7 @@ class TrainInput:
         self.neighborhood_size = 32
         self.grid_size = 4
         self.maxNumPeds = maxNumPeds
-        self.leaveDataset = 4
+        self.leaveDataset = leaveDataset
         self.lambda_param = 0.0005
         self.writer = "training"
         self.save_path = save_path
@@ -144,8 +144,8 @@ if __name__ == '__main__':
     parser.add_argument('--maxNumPeds', type=int, default=55,
                         help='Maximum Number of Pedestrians')
     # # The leave out dataset
-    # parser.add_argument('--leaveDataset', type=int, default=3,
-    #                     help='The dataset index to be left out in training')
+    parser.add_argument('--leaveDataset', type=int, default=3,
+                        help='The dataset index to be left out in training')
     # # Lambda regularization parameter (L2)
     # parser.add_argument('--lambda_param', type=float, default=0.0005,
     #                     help='L2 regularization parameter')
