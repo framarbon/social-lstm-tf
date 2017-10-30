@@ -95,7 +95,7 @@ def train(args):
         os.makedirs(log_directory)
 
     # Logging files
-    log_file_curve = open(os.path.join(log_directory, 'log_curve.txt'), 'w')
+    log_file_curve = open(os.path.join(log_directory, args.writer+'_curve.txt'), 'w')
     log_file = open(os.path.join(log_directory, 'val.txt'), 'w')
 
     # Save directory
