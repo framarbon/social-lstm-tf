@@ -463,8 +463,8 @@ class SocialModel():
         # so traj shape is (obs_length x maxNumPeds x 3)
         # grid is a tensor of shape obs_length x maxNumPeds x maxNumPeds x (gs**2)
         states = sess.run(self.LSTM_states)
-        writer = tf.summary.FileWriter('save/sample')
-        writer.add_graph(sess.graph)
+        # writer = tf.summary.FileWriter('save/sample')
+        # writer.add_graph(sess.graph)
         # print "Fitting"
         # For each frame in the sequence
         for index, frame in enumerate(traj[:-1]):
@@ -477,7 +477,7 @@ class SocialModel():
                     self.target_data: target_data}
 
             [states, cost, s] = sess.run([self.final_states, self.cost, self.summ], feed)
-            writer.add_summary(s, index)
+            # writer.add_summary(s, index)
             # print cost
 
         ret = traj
@@ -494,7 +494,7 @@ class SocialModel():
             feed = {self.input_data: prev_data, self.LSTM_states: states, self.grid_data: prev_grid_data,
                     self.target_data: prev_target_data}
             [output, states, cost, s] = sess.run([self.final_output, self.final_states, self.cost, self.summ], feed)
-            writer.add_summary(s, t)
+            # writer.add_summary(s, t)
             # print "Cost", cost
             # Output is a list of lists where the inner lists contain matrices of shape 1x5. The outer list contains only one element (since seq_length=1) and the inner list contains maxNumPeds elements
             # output = output[0]
@@ -527,8 +527,8 @@ class SocialModel():
         # so traj shape is (obs_length x maxNumPeds x 3)
         # grid is a tensor of shape obs_length x maxNumPeds x maxNumPeds x (gs**2)
         states = sess.run(self.LSTM_states)
-        writer = tf.summary.FileWriter('save/Ownsample')
-        writer.add_graph(sess.graph)
+        # writer = tf.summary.FileWriter('save/Ownsample')
+        # writer.add_graph(sess.graph)
         # print "Fitting"
         # For each frame in the sequence
         for index, frame in enumerate(traj[:-1]):
@@ -541,7 +541,7 @@ class SocialModel():
                     self.target_data: target_data}
 
             [states, cost, s] = sess.run([self.final_states, self.cost, self.summ], feed)
-            writer.add_summary(s, index)
+            # writer.add_summary(s, index)
             # print cost
 
         ret = traj
@@ -556,7 +556,7 @@ class SocialModel():
             # print "**** NEW PREDICTION TIME STEP", t, "****"
             feed = {self.input_data: prev_data, self.LSTM_states: states, self.grid_data: prev_grid_data}
             [output, states, s] = sess.run([self.final_output, self.final_states, self.summ], feed)
-            writer.add_summary(s, t)
+            # writer.add_summary(s, t)
             # print "Cost", cost
             # Output is a list of lists where the inner lists contain matrices of shape 1x5. The outer list contains only one element (since seq_length=1) and the inner list contains maxNumPeds elements
             # output = output[0]
