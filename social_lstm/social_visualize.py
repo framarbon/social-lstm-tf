@@ -71,10 +71,10 @@ def plot_trajectories(true_trajs, pred_trajs, obs_length, name):
         true_traj_ped = traj_data[j][0]  # List of [x,y] elements
         pred_traj_ped = traj_data[j][1]
 
-        true_x = [p[0]*height for p in true_traj_ped]
-        true_y = [(1-p[1])*width for p in true_traj_ped]
-        pred_x = [p[0]*height for p in pred_traj_ped]
-        pred_y = [(1-p[1])*width for p in pred_traj_ped]
+        true_x = [(p[0]+1.)*height/2. for p in true_traj_ped]
+        true_y = [(p[1]+1.)*width/2. for p in true_traj_ped]
+        pred_x = [(p[0]+1.)*height/2. for p in pred_traj_ped]
+        pred_y = [(p[1]+1.)*width/2. for p in pred_traj_ped]
 
         plt.plot(true_x, true_y, color=c, linestyle='solid', marker='o')
         plt.plot(pred_x, pred_y, color=c2, linestyle='dashed', marker='x')
