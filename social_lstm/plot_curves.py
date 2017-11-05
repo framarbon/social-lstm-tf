@@ -59,6 +59,7 @@ def plot_learning_curve(log_path, num_epochs, title="Benchmark"):
 
     num_curves = 3
     test_min = np.min(test_scores_means, axis=1)
+    print test_min
     zipp = zip(test_min, train_scores_means, train_scores_stds, test_scores_means, test_scores_stds, names)
     zipp.sort(key=lambda t: t[0])
     # plt.grid()
