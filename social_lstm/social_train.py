@@ -166,7 +166,7 @@ def train(args):
 
                     # Feed the source, target data
                     feed = {model.input_data: x_batch, model.target_data: y_batch,
-                            model.grid_data: grid_batch, model.map_index: [d_batch]}
+                            model.grid_data: grid_batch}
 
                     train_loss, _ = sess.run([model.cost, model.train_op], feed)
                     loss_batch += train_loss

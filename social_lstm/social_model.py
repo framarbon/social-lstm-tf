@@ -39,12 +39,6 @@ class SocialModel():
         # Maximum number of peds
         self.maxNumPeds = args.maxNumPeds
 
-        # Flag to determine whether static obstacles are considered
-        self.obs_map = []
-        if len(args.obs_maps) > 0:
-            self.obs_map = np.array(args.obs_maps)
-            print 'OBSTACLE MAP ENABLED'
-
         # NOTE : For now assuming, batch_size is always 1. That is the input
         # to the model is always a sequence of frames
 
@@ -367,12 +361,6 @@ class SocialModel():
         grid_frame_ped_data = tf.split(grid_frame_data, self.args.maxNumPeds, 0)
         # Squeeze tensors to form MNP x (GS**2) matrices
         grid_frame_ped_data = [tf.squeeze(input_, [0]) for input_ in grid_frame_ped_data]
-        # Dimensions occupancy map (height, width)
-        obs_map = tf.squeeze(tf.gather_nd(self.obs_map, [[self.map_index]]))
-        dimensions = obs_map.get_shape().as_list()
-        dimensions = [x*0.5 for x in dimensions]
-        half_n = self.args.neighborhood_size/2
-        obs_map = tf.pad(obs_map, [[half_n, half_n], [half_n, half_n]], "CONSTANT")
 
         # For each pedestrian
         for ped in range(self.args.maxNumPeds):
@@ -380,39 +368,6 @@ class SocialModel():
             with tf.name_scope("tensor_calculation"):
 
                 social_tensor_ped = tf.matmul(tf.transpose(grid_frame_ped_data[ped]), hidden_states)
-                # # Compute the static obstacles tensor
-                # position_ped = tf.slice(current_frame_data, [ped, 1], [1, 2])  # Tensor of shape (1,2)
-                # position_ped = tf.add(position_ped, tf.ones([1, 2], tf.float32))
-                # position_ped = tf.clip_by_value(position_ped, 0., 1.)
-                #
-                # global_position_ped = tf.rint(tf.matmul(position_ped, [[dimensions[0], 0], [0, dimensions[1]]]))
-                # global_position_ped = tf.squeeze(tf.cast(global_position_ped, tf.int32))
-                #
-                # # Origin corner of the grid around the ped
-                # # origin_grid_ped = tf.subtract(global_position_ped, self.args.neighborhood_size / 2)
-                # # end_grid_ped = tf.add(global_position_ped, self.args.neighborhood_size / 2.0)
-                # # obs_map_ped = self.obs_map[origin_grid_ped[0]:end_grid_ped[0], origin_grid_ped[1]:end_grid_ped[1]]
-                #
-                # # ROI o the obstacle map centered at ped
-                # obs_map_ped = tf.slice(obs_map, global_position_ped, [self.args.neighborhood_size, self.args.neighborhood_size])
-                # # Pooling the ROI into the grid size
-                # tensor_obs_map_ped = tf.reshape(obs_map_ped, [1, self.args.neighborhood_size, self.args.neighborhood_size, 1])
-                # cell_size = self.args.neighborhood_size/self.args.grid_size
-                # tensor_float = tf.cast(tensor_obs_map_ped, tf.float32)
-                # pool = tf.nn.pool(input=tensor_float,
-                #                   window_shape=[cell_size, cell_size],
-                #                   strides=[cell_size, cell_size],
-                #                   padding='SAME',
-                #                   pooling_type="AVG")
-                # pool_grid = tf.reshape(pool, [self.args.grid_size*self.args.grid_size, 1])
-                #
-                # with tf.name_scope("obstacle_embeddings"):
-                #     # Embed the spatial input
-                #     embedded_obs = tf.nn.relu(tf.nn.xw_plus_b(pool_grid, self.embedding_o_w, self.embedding_o_b))
-                #     static_tensor = tf.concat([embedded_obs, tf.zeros(tf.shape(embedded_obs))],1)
-                #
-                # # Including static obstacle information into the social tensor
-                # social_tensor_ped = tf.add(social_tensor_ped, static_tensor)
                 social_tensor[ped] = tf.reshape(social_tensor_ped, [1, self.grid_size * self.grid_size, self.rnn_size])
 
         # Concatenate the social tensor from a list to a tensor of shape MNP x (GS**2) x RNN_size
