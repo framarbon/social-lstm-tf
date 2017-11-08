@@ -60,9 +60,10 @@ def main():
     # Maximum number of pedestrians to be considered
     parser.add_argument('--maxNumPeds', type=int, default=40,
                         help='Maximum Number of Pedestrians')
-    # The leave out dataset
-    parser.add_argument('--leaveDataset', type=int, default=3,
-                        help='The dataset index to be left out in training')
+    # The validation dataset
+    parser.add_argument('-v', '--validDataset', type=int, default=4)
+    # The training dataset
+    parser.add_argument('-t', '--trainingDataset', type=int, nargs='+', default=[2,3,4])
     # Lambda regularization parameter (L2)
     parser.add_argument('--lambda_param', type=float, default=0.0005,
                         help='L2 regularization parameter')
@@ -72,14 +73,20 @@ def main():
     # Obstacle Map
     parser.add_argument('--obs_maps', type=list, default=[],
                         help='Obstacle Map file')
+    # Save path
+    parser.add_argument('--save_path', type=str, default="",
+                        help='save_path')
     args = parser.parse_args()
     train(args)
 
 
 def train(args):
-    datasets = [2,3,4]
+    datasets = args.trainingDataset
+    if not args.save_path:
+        print 'DEBUG'
+        args.save_path = os.getcwd()
     # Remove the 4th from datasets
-    valid_data=datasets.index(4)
+    valid_data = datasets.index(args.validDataset)
     # datasets = [0]
 
     # Create the SocialDataLoader object
@@ -89,7 +96,7 @@ def train(args):
 
     # Log directory
     log_directory = 'log/'
-    log_directory += str(args.leaveDataset) + '/'
+    log_directory += str(args.validDataset) + '/'
     if not os.path.exists(log_directory):
         os.makedirs(log_directory)
 
@@ -99,7 +106,7 @@ def train(args):
 
     # Save directory
     save_directory = args.save_path+'save/'
-    save_directory += str(args.leaveDataset) + '/'
+    save_directory += str(args.validDataset) + '/'
     if not os.path.exists(save_directory):
         os.makedirs(save_directory)
 
