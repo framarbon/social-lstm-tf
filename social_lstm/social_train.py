@@ -89,7 +89,7 @@ def train(args):
     if not args.save_path:
         args.save_path = os.getcwd()
     if not args.pipeline:
-        args.distmap = get_distMap(args.neighborhood_size)
+        args.dist_map = get_distMap(args.neighborhood_size)
 
     # Remove the 4th from datasets
     valid_data = datasets.index(args.validDataset)
