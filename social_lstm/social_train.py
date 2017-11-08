@@ -3,6 +3,7 @@ import argparse
 import os
 import time
 import pickle
+import numpy as np
 
 from social_model import SocialModel
 from social_utils import SocialDataLoader
@@ -84,6 +85,9 @@ def train(args):
     datasets = args.trainingDataset
     if not args.save_path:
         args.save_path = os.getcwd()
+    if not args.distmap:
+        args.distmap = get_distMap(args.neighborhood_size)
+
     # Remove the 4th from datasets
     valid_data = datasets.index(args.validDataset)
     print 'DEBUG'
@@ -278,6 +282,21 @@ def train(args):
         log_file.close()
         log_file_curve.close()
 
+
+def get_distMap(neighborhood_size):
+    # Neighborhood size
+    ns = neighborhood_size
+    # Half Neighborhood size
+    hns = ns / 2
+    distMap = np.zeros([ns, ns], dtype=np.float)
+    for x in range(ns):
+        xnorm = (x - hns) ** 2
+        for y in range(ns):
+            ynorm = (y - hns) ** 2
+            totalnorm = (xnorm + ynorm)
+            if totalnorm > 1e-5:
+                distMap[x, y] = 1. / totalnorm
+    return distMap
 
 if __name__ == '__main__':
     main()
