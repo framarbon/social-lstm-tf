@@ -77,6 +77,9 @@ def main():
     # Save path
     parser.add_argument('--save_path', type=str, default="",
                         help='save_path')
+    # Save path
+    parser.add_argument('--pipeline', type=bool, default=False,
+                        help='save_path')
     args = parser.parse_args()
     train(args)
 
@@ -85,7 +88,7 @@ def train(args):
     datasets = args.trainingDataset
     if not args.save_path:
         args.save_path = os.getcwd()
-    if not args.distmap:
+    if not args.pipeline:
         args.distmap = get_distMap(args.neighborhood_size)
 
     # Remove the 4th from datasets
