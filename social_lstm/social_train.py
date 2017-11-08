@@ -133,7 +133,7 @@ def train(args):
         # writer = tf.summary.FileWriter(save_directory+args.writer)
         # writer.add_graph(sess.graph)
         # Initialize a saver that saves all the variables in the graph
-        # saver = tf.train.Saver(tf.all_variables(), max_to_keep=None)
+        saver = tf.train.Saver(tf.all_variables(), max_to_keep=None)
 
         # summary_writer = tf.train.SummaryWriter('/tmp/lstm/logs', graph_def=sess.graph_def)
         print 'Training begin'

@@ -72,6 +72,7 @@ class TrainInput:
         self.writer = "training"
         self.dist_map = self.get_distMap()
         self.save_path = save_path
+        self.pipeline = True
 
     def set_learning_rate(self, lr):
         self.learning_rate = lr
