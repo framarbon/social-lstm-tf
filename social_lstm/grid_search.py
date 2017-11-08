@@ -70,6 +70,7 @@ class TrainInput:
         self.lambda_param = 0.0005
         self.writer = "training"
         self.save_path = save_path
+        self.pipeline = True
 
     def set_learning_rate(self, lr):
         self.learning_rate = lr
