@@ -540,7 +540,7 @@ class SocialModel():
             feed = {self.input_data: data, self.LSTM_states: states, self.grid_data: grid_data,
                     self.target_data: target_data}
 
-            [states, cost, s] = sess.run([self.final_states, self.cost, self.summ], feed)
+            [states, cost] = sess.run([self.final_states, self.cost], feed)
             # writer.add_summary(s, index)
             # print cost
 
