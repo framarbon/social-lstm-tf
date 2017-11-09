@@ -555,7 +555,7 @@ class SocialModel():
         for t in range(num):
             # print "**** NEW PREDICTION TIME STEP", t, "****"
             feed = {self.input_data: prev_data, self.LSTM_states: states, self.grid_data: prev_grid_data}
-            [output, states, s] = sess.run([self.final_output, self.final_states, self.summ], feed)
+            [output, states] = sess.run([self.final_output, self.final_states], feed)
             # writer.add_summary(s, t)
             # print "Cost", cost
             # Output is a list of lists where the inner lists contain matrices of shape 1x5. The outer list contains only one element (since seq_length=1) and the inner list contains maxNumPeds elements
