@@ -476,7 +476,7 @@ class SocialModel():
             feed = {self.input_data: data, self.LSTM_states: states, self.grid_data: grid_data,
                     self.target_data: target_data}
 
-            [states, cost, s] = sess.run([self.final_states, self.cost, self.summ], feed)
+            [states, cost] = sess.run([self.final_states, self.cost], feed)
             # writer.add_summary(s, index)
             # print cost
 
@@ -493,7 +493,7 @@ class SocialModel():
             # print "**** NEW PREDICTION TIME STEP", t, "****"
             feed = {self.input_data: prev_data, self.LSTM_states: states, self.grid_data: prev_grid_data,
                     self.target_data: prev_target_data}
-            [output, states, cost, s] = sess.run([self.final_output, self.final_states, self.cost, self.summ], feed)
+            [output, states, cost] = sess.run([self.final_output, self.final_states, self.cost], feed)
             # writer.add_summary(s, t)
             # print "Cost", cost
             # Output is a list of lists where the inner lists contain matrices of shape 1x5. The outer list contains only one element (since seq_length=1) and the inner list contains maxNumPeds elements
