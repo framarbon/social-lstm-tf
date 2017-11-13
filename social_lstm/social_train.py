@@ -226,7 +226,7 @@ def train(args):
 
             # writer.add_graph(sess.graph)
 
-            for b in range(data_loader.num_batches):
+            for b in range(data_loader.valid_num_batches):
 
                 # Get the source, target and dataset data for the next batch
                 # x, y are input and target data which are lists containing numpy arrays of size seq_length x maxNumPeds x 3
