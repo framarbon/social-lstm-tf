@@ -208,6 +208,13 @@ def train(args):
                     print("model saved to {}".format(checkpoint_path))
                 '''
             loss_epoch /= data_loader.num_batches
+
+            print(
+                "Epoch {}, epoch_loss = {:.3f}"
+                    .format(
+                    e,
+                    loss_epoch))
+
             # train_cost = tf.Summary(value=[tf.Summary.Value(tag="TrainingCost", simple_value=loss_epoch)])
             # writer.add_summary(train_cost, e * data_loader.num_batches + b)
             log_file_curve.write(str(e)+','+str(loss_epoch)+',')
@@ -255,6 +262,13 @@ def train(args):
                 loss_epoch += loss_batch
                 # test_cost = tf.Summary(value=[tf.Summary.Value(tag="TestCost", simple_value=loss_batch)])
                 # writer.add_summary(test_cost, e * data_loader.num_batches + b)
+                print(
+                    "{}/{} (epoch {}), Valid_loss = {:.3f}, time/batch = {:.3f}"
+                    .format(
+                        e * data_loader.num_batches + b,
+                        args.num_epochs * data_loader.valid_num_batches,
+                        e,
+                        loss_batch, end - start))
 
             loss_epoch /= data_loader.valid_num_batches
             # test_cost = tf.Summary(value=[tf.Summary.Value(tag="TestCost", simple_value=loss_epoch)])
@@ -265,7 +279,7 @@ def train(args):
                 best_val_loss = loss_epoch
                 best_epoch = e
 
-            print('(epoch {}), valid_loss = {:.3f}'.format(e, loss_epoch))
+            print('(epoch {}), valid_epoch_loss = {:.3f}'.format(e, loss_epoch))
             print 'Best epoch', best_epoch, 'Best validation loss', best_val_loss
             log_file_curve.write(str(loss_epoch)+'\n')
             print '*****************'

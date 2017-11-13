@@ -71,14 +71,18 @@ def plot_learning_curve(log_path, num_epochs, title="Benchmark"):
     # mpl.rc('axes', color_cycle=['r','k','c'])
     fig, axes = plt.subplots(nrows=2)
 
+    k=0
     for i, (_, train_scores_mean, train_scores_std, test_scores_mean, test_scores_std, name) in enumerate(zipp):
+        if i< 0:
+            continue
         axes[0].fill_between(range(num_epochs), train_scores_mean - train_scores_std,
                          train_scores_mean + train_scores_std, alpha=0.1, color=cgen0.next())
         axes[1].fill_between(range(num_epochs), test_scores_mean - test_scores_std,
                          test_scores_mean + test_scores_std, alpha=0.1, color=cgen1.next())
         axes[0].plot(range(num_epochs), train_scores_mean, 'o-',  label=name)
         axes[1].plot(range(num_epochs), test_scores_mean, 'o-', label=name)
-        if i+1 >= num_curves:
+        k += 1
+        if k == num_curves:
             break
 
     handles, labels = axes[1].get_legend_handles_labels()
