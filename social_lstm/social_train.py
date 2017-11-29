@@ -103,9 +103,9 @@ def train(args):
     # Initialize a TensorFlow session
     with tf.Session() as sess:
         # Initialize all variables in the graph
-        sess.run(tf.initialize_all_variables())
+        sess.run(tf.global_variables_initializer())
         # Initialize a saver that saves all the variables in the graph
-        saver = tf.train.Saver(tf.all_variables(), max_to_keep=None)
+        saver = tf.train.Saver(tf.global_variables(), max_to_keep=None)
 
         # summary_writer = tf.train.SummaryWriter('/tmp/lstm/logs', graph_def=sess.graph_def)
         print 'Training begin'

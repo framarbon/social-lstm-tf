@@ -79,9 +79,9 @@ def train(args):
     # Initialize a TensorFlow session
     with tf.Session() as sess:
         # Initialize all the variables in the graph
-        sess.run(tf.initialize_all_variables())
+        sess.run(tf.global_variables_initializer())
         # Add all the variables to the list of variables to be saved
-        saver = tf.train.Saver(tf.all_variables())
+        saver = tf.train.Saver(tf.global_variables())
 
         # For each epoch
         for e in range(args.num_epochs):

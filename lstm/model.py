@@ -71,7 +71,7 @@ class Model():
             output_b = tf.get_variable("output_b", [output_size], initializer=tf.constant_initializer(0.01), trainable=True)
 
         # Split inputs according to sequences.
-        inputs = tf.split(1, args.seq_length, self.input_data)
+        inputs = tf.split(axis=1, num_or_size_splits=args.seq_length, value=self.input_data)
         # Get a list of 2D tensors. Each of size numPoints x 2
         inputs = [tf.squeeze(input_, [1]) for input_ in inputs]
 
@@ -87,7 +87,7 @@ class Model():
         outputs, last_state = tf.nn.seq2seq.rnn_decoder(embedded_inputs, self.initial_state, cell, loop_function=None, scope="rnnlm")
 
         # Concatenate the outputs from the RNN decoder and reshape it to ?xargs.rnn_size
-        output = tf.reshape(tf.concat(1, outputs), [-1, args.rnn_size])
+        output = tf.reshape(tf.concat(axis=1, values=outputs), [-1, args.rnn_size])
 
         # Apply the output linear layer
         output = tf.nn.xw_plus_b(output, output_w, output_b)
@@ -97,7 +97,7 @@ class Model():
         # reshape target data so that it aligns with predictions
         flat_target_data = tf.reshape(self.target_data, [-1, 2])
         # Extract the x-coordinates and y-coordinates from the target data
-        [x_data, y_data] = tf.split(1, 2, flat_target_data)
+        [x_data, y_data] = tf.split(axis=1, num_or_size_splits=2, value=flat_target_data)
 
         def tf_2d_normal(x, y, mux, muy, sx, sy, rho):
             '''
@@ -114,17 +114,17 @@ class Model():
             # eq 3 in the paper
             # and eq 24 & 25 in Graves (2013)
             # Calculate (x - mux) and (y-muy)
-            normx = tf.sub(x, mux)
-            normy = tf.sub(y, muy)
+            normx = tf.subtract(x, mux)
+            normy = tf.subtract(y, muy)
             # Calculate sx*sy
-            sxsy = tf.mul(sx, sy)
+            sxsy = tf.multiply(sx, sy)
             # Calculate the exponential factor
-            z = tf.square(tf.div(normx, sx)) + tf.square(tf.div(normy, sy)) - 2*tf.div(tf.mul(rho, tf.mul(normx, normy)), sxsy)
+            z = tf.square(tf.div(normx, sx)) + tf.square(tf.div(normy, sy)) - 2*tf.div(tf.multiply(rho, tf.multiply(normx, normy)), sxsy)
             negRho = 1 - tf.square(rho)
             # Numerator
             result = tf.exp(tf.div(-z, 2*negRho))
             # Normalization constant
-            denom = 2 * np.pi * tf.mul(sxsy, tf.sqrt(negRho))
+            denom = 2 * np.pi * tf.multiply(sxsy, tf.sqrt(negRho))
             # Final PDF calculation
             result = tf.div(result, denom)
             self.result = result
@@ -179,7 +179,7 @@ class Model():
 
             z = output
             # Split the output into 5 parts corresponding to means, std devs and corr
-            z_mux, z_muy, z_sx, z_sy, z_corr = tf.split(1, 5, z)
+            z_mux, z_muy, z_sx, z_sy, z_corr = tf.split(axis=1, num_or_size_splits=5, value=z)
 
             # The output must be exponentiated for the std devs
             z_sx = tf.exp(z_sx)
