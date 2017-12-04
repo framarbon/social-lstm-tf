@@ -16,7 +16,7 @@ import random
 # sequence.
 class SocialDataLoader():
 
-    def __init__(self, batch_size=50, seq_length=5, maxNumPeds=40, datasets=[2, 3, 4], forcePreProcess=False, infer=False, valid_dataset = -1):
+    def __init__(self, batch_size=50, seq_length=5, maxNumPeds=40, datasets=[2, 3, 4], forcePreProcess=False, infer=False):
         '''
         Initialiser function for the SocialDataLoader class
         params:
@@ -47,7 +47,7 @@ class SocialDataLoader():
         self.seq_length = seq_length
 
         # Validation arguments
-        self.valid_dataset = valid_dataset
+        self.val_fraction = 0.2
 
         # Define the path in which the process data would be stored
         data_file = os.path.join(self.data_dir, "social-trajectories.cpkl")
@@ -111,9 +111,11 @@ class SocialDataLoader():
             # Number of frames
             numFrames = len(frameList)
 
-            valid_numFrames = 0
-            if self.valid_dataset == index:
-                valid_numFrames = numFrames
+
+            if self.infer:
+                valid_numFrames = 0
+            else:
+                valid_numFrames = int(numFrames * self.val_fraction)
 
             # Add the list of frameIDs to the frameList_data
             frameList_data.append(frameList)
