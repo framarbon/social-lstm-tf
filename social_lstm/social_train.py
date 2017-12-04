@@ -76,6 +76,7 @@ def train(args):
     # Remove the leaveDataset from datasets
     datasets.remove(args.leaveDataset)
     datasets = [5]
+    args.leaveDataset = 5
 
     # Create the SocialDataLoader object
     data_loader = SocialDataLoader(args.batch_size, args.seq_length, args.maxNumPeds, datasets, forcePreProcess=True, infer=False)
@@ -83,6 +84,8 @@ def train(args):
     # Log directory
     log_directory = 'log/'
     log_directory += str(args.leaveDataset) + '/'
+    if not os.path.exists(log_directory):
+        os.makedirs(log_directory)
 
     # Logging files
     log_file_curve = open(os.path.join(log_directory, 'log_curve.txt'), 'w')
@@ -91,6 +94,8 @@ def train(args):
     # Save directory
     save_directory = 'save/'
     save_directory += str(args.leaveDataset) + '/'
+    if not os.path.exists(save_directory):
+        os.makedirs(save_directory)
 
     with open(os.path.join(save_directory, 'social_config.pkl'), 'wb') as f:
         pickle.dump(args, f)
