@@ -42,7 +42,7 @@ def convert_to_obstacle_map(img):
 def main():
     data_dirs = ['../data/eth/univ', '../data/eth/hotel',
                  '../data/ucy/zara/zara01', '../data/ucy/zara/zara02',
-                 '../data/ucy/univ']
+                 '../data/ucy/univ', '../data/own/1']
 
     for x in data_dirs:
         image_file = x + '/annotated.png'

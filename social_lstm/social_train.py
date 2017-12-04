@@ -61,8 +61,6 @@ def main():
     # Maximum number of pedestrians to be considered
     parser.add_argument('--maxNumPeds', type=int, default=40,
                         help='Maximum Number of Pedestrians')
-    # The validation dataset
-    parser.add_argument('-v', '--validDataset', type=int, default=4)
     # The training dataset
     parser.add_argument('-t', '--trainingDataset', type=int, nargs='+', default=[2,3,4])
     # Lambda regularization parameter (L2)
@@ -91,20 +89,14 @@ def train(args):
     if not args.pipeline:
         args.dist_map = get_distMap(args.neighborhood_size)
 
-    # Remove the 4th from datasets
-    valid_data = datasets.index(args.validDataset)
-    print 'DEBUG'
-    print valid_data
-    # datasets = [0]
-
     # Create the SocialDataLoader object
-    data_loader = SocialDataLoader(args.batch_size, args.seq_length, args.maxNumPeds, datasets, forcePreProcess=True, infer=False, valid_dataset=valid_data)
+    data_loader = SocialDataLoader(args.batch_size, args.seq_length, args.maxNumPeds, datasets, forcePreProcess=True, infer=False)
 
     args.obs_maps = data_loader.get_obs_map()
 
     # Log directory
     log_directory = 'log/'
-    log_directory += str(args.validDataset) + '/'
+    log_directory += '-'.join(str(args.trainingDataset)) + '/'
     if not os.path.exists(log_directory):
         os.makedirs(log_directory)
 
@@ -114,7 +106,7 @@ def train(args):
 
     # Save directory
     save_directory = args.save_path+'save/'
-    save_directory += str(args.validDataset) + '/'
+    save_directory += '-'.join(str(args.trainingDataset)) + '/'
     if not os.path.exists(save_directory):
         os.makedirs(save_directory)
 
@@ -170,6 +162,9 @@ def train(args):
                     # x_batch, y_batch would be numpy arrays of size seq_length x maxNumPeds x 3
                     # d_batch would be a scalar identifying the dataset from which this sequence is extracted
                     x_batch, y_batch, d_batch = x[batch], y[batch], d[batch]
+                    print "DEBUG INFO \n"
+                    print d_batch
+                    print "*********"
 
                     if d_batch == 0 and datasets[0] == 0:
                         dataset_data = [640, 480]
@@ -243,6 +238,10 @@ def train(args):
                     # x_batch, y_batch would be numpy arrays of size seq_length x maxNumPeds x 3
                     # d_batch would be a scalar identifying the dataset from which this sequence is extracted
                     x_batch, y_batch, d_batch = x[batch], y[batch], d[batch]
+
+                    print "DEBUG INFO \n"
+                    print d_batch
+                    print "*********"
 
                     if d_batch == 0 and datasets[0] == 0:
                         dataset_data = [640, 480]
