@@ -69,9 +69,6 @@ def main():
     # TensorBoard Writer name
     parser.add_argument('--writer', type=str, default='training',
                         help='L2 regularization parameter')
-    # Obstacle Map
-    parser.add_argument('--obs_maps', type=list, default=[],
-                        help='Obstacle Map file')
     # Save path
     parser.add_argument('--save_path', type=str, default="",
                         help='save_path')
@@ -86,8 +83,6 @@ def train(args):
 
     # Create the SocialDataLoader object
     data_loader = SocialDataLoader(args.batch_size, args.seq_length, args.maxNumPeds, datasets, forcePreProcess=True, infer=False)
-
-    args.obs_maps = data_loader.get_obs_map()
 
     # Log directory
     log_directory = 'log/'
@@ -240,7 +235,7 @@ def train(args):
 
                     # Feed the source, target data
                     feed = {model.input_data: x_batch, model.target_data: y_batch,
-                            model.grid_data: grid_batch, model.map_index: [d_batch]}
+                            model.grid_data: grid_batch}
 
                     train_loss = sess.run(model.cost, feed)
                     loss_batch += train_loss
