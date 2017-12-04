@@ -162,9 +162,6 @@ def train(args):
                     # x_batch, y_batch would be numpy arrays of size seq_length x maxNumPeds x 3
                     # d_batch would be a scalar identifying the dataset from which this sequence is extracted
                     x_batch, y_batch, d_batch = x[batch], y[batch], d[batch]
-                    print "DEBUG INFO \n"
-                    print d_batch
-                    print "*********"
 
                     if d_batch == 0 and datasets[0] == 0:
                         dataset_data = [640, 480]
@@ -238,10 +235,6 @@ def train(args):
                     # x_batch, y_batch would be numpy arrays of size seq_length x maxNumPeds x 3
                     # d_batch would be a scalar identifying the dataset from which this sequence is extracted
                     x_batch, y_batch, d_batch = x[batch], y[batch], d[batch]
-
-                    print "DEBUG INFO \n"
-                    print d_batch
-                    print "*********"
 
                     if d_batch == 0 and datasets[0] == 0:
                         dataset_data = [640, 480]
