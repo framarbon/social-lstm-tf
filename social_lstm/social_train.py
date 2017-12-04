@@ -176,14 +176,19 @@ def train(args):
                 '''
             loss_epoch /= data_loader.num_batches
             log_file_curve.write(str(e)+','+str(loss_epoch)+',')
+            print(
+                "Epoch {}), train_loss = {:.3f}"
+                    .format(
+                    e,
+                    loss_epoch))
             print '*****************'
 
             # Validation
             data_loader.reset_batch_pointer(valid=True)
             loss_epoch = 0
 
-            for b in range(data_loader.num_batches):
-
+            for b in range(data_loader.valid_num_batches):
+                start = time.time()
                 # Get the source, target and dataset data for the next batch
                 # x, y are input and target data which are lists containing numpy arrays of size seq_length x maxNumPeds x 3
                 # d is the list of dataset indices from which each batch is generated (used to differentiate between datasets)
@@ -213,9 +218,17 @@ def train(args):
                     train_loss = sess.run(model.cost, feed)
 
                     loss_batch += train_loss
-
+                end = time.time()
                 loss_batch = loss_batch / data_loader.batch_size
                 loss_epoch += loss_batch
+
+                print(
+                    "{}/{} (epoch {}), valid_loss = {:.3f}, time/batch = {:.3f}"
+                    .format(
+                        e * data_loader.valid_num_batches + b,
+                        args.num_epochs * data_loader.valid_num_batches,
+                        e,
+                        loss_batch, end - start))
 
             loss_epoch /= data_loader.valid_num_batches
 
