@@ -27,7 +27,7 @@ class SocialDataLoader():
         # List of data directories where raw data resides
         self.data_dirs = ['../data/eth/univ', '../data/eth/hotel',
                           '../data/ucy/zara/zara01', '../data/ucy/zara/zara02',
-                          '../data/ucy/univ']
+                          '../data/ucy/univ', '../data/own/1']
         # self.data_dirs = ['./data/eth/univ', './data/eth/hotel']
 
         self.used_data_dirs = [self.data_dirs[x] for x in datasets]

@@ -1,0 +1,17 @@
+<svg height="50" width="50">
+    <rect width="50" height="1" x="0" y="0" style="fill: blue; stroke: blue; stroke-width: 0px;opacity:0.7"/>
+		<rect width="50" height="1" x="0" y="49" style="fill: blue; stroke: blue; stroke-width: 0px;opacity:0.7"/>
+		<rect width="1" height="50" x="0" y="0" style="fill: blue; stroke: blue; stroke-width: 0px;opacity:0.7"/>
+		<rect width="1" height="50" x="49" y="0" style="fill: blue; stroke: blue; stroke-width: 0px;opacity:0.7"/>
+		<rect width="10" height="10" x="9" y="9" style="fill: blue; stroke: blue; stroke-width: 0px;opacity:0.7"/>
+		<rect width="10" height="10" x="9" y="29" style="fill: blue; stroke: blue; stroke-width: 0px;opacity:0.7"/>
+		<rect width="10" height="10" x="29" y="9" style="fill: blue; stroke: blue; stroke-width: 0px;opacity:0.7"/>
+		<rect width="10" height="10" x="29" y="29" style="fill: blue; stroke: blue; stroke-width: 0px;opacity:0.7"/>
+		<rect width="2" height="1" x="13" y="46" style="fill: blue; stroke: blue; stroke-width: 0px;opacity:0.7"/>
+		<rect width="2" height="1" x="13" y="41" style="fill: blue; stroke: blue; stroke-width: 0px;opacity:0.7"/>
+		<rect width="2" height="1" x="34" y="43.5" style="fill: blue; stroke: blue; stroke-width: 0px;opacity:0.7"/>
+<rect width="2" height="1" x="6" y="13" style="fill: blue; stroke: blue; stroke-width: 0px;opacity:0.7"/>
+<rect width="2" height="1" x="23" y="5" style="fill: blue; stroke: blue; stroke-width: 0px;opacity:0.7"/>
+<rect width="1" height="1" x="42" y="14" style="fill: blue; stroke: blue; stroke-width: 0px;opacity:0.7"/>
+<rect width="1" height="1" x="46" y="12" style="fill: blue; stroke: blue; stroke-width: 0px;opacity:0.7"/>
+</svg>
