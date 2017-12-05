@@ -33,6 +33,7 @@ class SocialModel():
         # Store rnn size and grid_size
         self.rnn_size = args.rnn_size
         self.grid_size = args.grid_size
+        self.size_data_state = 5
 
         # Maximum number of peds
         self.maxNumPeds = args.maxNumPeds
@@ -58,11 +59,11 @@ class SocialModel():
         # A sequence contains an ordered set of consecutive frames
         # Each frame can contain a maximum of 'args.maxNumPeds' number of peds
         # For each ped we have their (pedID, x, y) positions as input
-        self.input_data = tf.placeholder(tf.float32, [args.seq_length, args.maxNumPeds, 3], name="input_data")
+        self.input_data = tf.placeholder(tf.float32, [args.seq_length, args.maxNumPeds, self.size_data_state], name="input_data")
 
         # target data would be the same format as input_data except with
         # one time-step ahead
-        self.target_data = tf.placeholder(tf.float32, [args.seq_length, args.maxNumPeds, 3], name="target_data")
+        self.target_data = tf.placeholder(tf.float32, [args.seq_length, args.maxNumPeds, self.size_data_state], name="target_data")
 
         # index of the obstacle map
         self.map_index = tf.placeholder(tf.int32, [1], name="map_index")
@@ -468,8 +469,8 @@ class SocialModel():
         # print "Fitting"
         # For each frame in the sequence
         for index, frame in enumerate(traj[:-1]):
-            data = np.reshape(frame, (1, self.maxNumPeds, 3))
-            target_data = np.reshape(traj[index + 1], (1, self.maxNumPeds, 3))
+            data = np.reshape(frame, (1, self.maxNumPeds, self.size_data_state))
+            target_data = np.reshape(traj[index + 1], (1, self.maxNumPeds, self.size_data_state))
             grid_data = np.reshape(grid[index, :],
                                    (1, self.maxNumPeds, self.maxNumPeds, self.grid_size * self.grid_size))
 
@@ -484,10 +485,10 @@ class SocialModel():
 
         last_frame = traj[-1]
 
-        prev_data = np.reshape(last_frame, (1, self.maxNumPeds, 3))
+        prev_data = np.reshape(last_frame, (1, self.maxNumPeds, self.size_data_state))
         prev_grid_data = np.reshape(grid[-1], (1, self.maxNumPeds, self.maxNumPeds, self.grid_size * self.grid_size))
 
-        prev_target_data = np.reshape(true_traj[traj.shape[0]], (1, self.maxNumPeds, 3))
+        prev_target_data = np.reshape(true_traj[traj.shape[0]], (1, self.maxNumPeds, self.size_data_state))
         # Prediction
         for t in range(num):
             # print "**** NEW PREDICTION TIME STEP", t, "****"
@@ -498,7 +499,7 @@ class SocialModel():
             # print "Cost", cost
             # Output is a list of lists where the inner lists contain matrices of shape 1x5. The outer list contains only one element (since seq_length=1) and the inner list contains maxNumPeds elements
             # output = output[0]
-            newpos = np.zeros((1, self.maxNumPeds, 3))
+            newpos = np.zeros((1, self.maxNumPeds, self.size_data_state))
             for pedindex, pedoutput in enumerate(output):
                 [o_mux, o_muy, o_sx, o_sy, o_corr] = np.split(pedoutput[0], 5, 0)
                 mux, muy, sx, sy, corr = o_mux[0], o_muy[0], np.exp(o_sx[0]), np.exp(o_sy[0]), np.tanh(o_corr[0])
@@ -517,7 +518,7 @@ class SocialModel():
             prev_data = newpos
             prev_grid_data = getSequenceGridMask(prev_data, dimensions, self.neighborhood_size, self.grid_size)
             if t != num - 1:
-                prev_target_data = np.reshape(true_traj[traj.shape[0] + t + 1], (1, self.maxNumPeds, 3))
+                prev_target_data = np.reshape(true_traj[traj.shape[0] + t + 1], (1, self.maxNumPeds, self.size_data_state))
 
         # The returned ret is of shape (obs_length+pred_length) x maxNumPeds x 3
         return ret
@@ -532,8 +533,8 @@ class SocialModel():
         # print "Fitting"
         # For each frame in the sequence
         for index, frame in enumerate(traj[:-1]):
-            data = np.reshape(frame, (1, self.maxNumPeds, 3))
-            target_data = np.reshape(traj[index + 1], (1, self.maxNumPeds, 3))
+            data = np.reshape(frame, (1, self.maxNumPeds, self.size_data_state))
+            target_data = np.reshape(traj[index + 1], (1, self.maxNumPeds, self.size_data_state))
             grid_data = np.reshape(grid[index, :],
                                    (1, self.maxNumPeds, self.maxNumPeds, self.grid_size * self.grid_size))
 
@@ -548,7 +549,7 @@ class SocialModel():
 
         last_frame = traj[-1]
 
-        prev_data = np.reshape(last_frame, (1, self.maxNumPeds, 3))
+        prev_data = np.reshape(last_frame, (1, self.maxNumPeds, self.size_data_state))
         prev_grid_data = np.reshape(grid[-1], (1, self.maxNumPeds, self.maxNumPeds, self.grid_size * self.grid_size))
 
         # Prediction
@@ -560,7 +561,7 @@ class SocialModel():
             # print "Cost", cost
             # Output is a list of lists where the inner lists contain matrices of shape 1x5. The outer list contains only one element (since seq_length=1) and the inner list contains maxNumPeds elements
             # output = output[0]
-            newpos = np.zeros((1, self.maxNumPeds, 3))
+            newpos = np.zeros((1, self.maxNumPeds, self.size_data_state))
             for pedindex, pedoutput in enumerate(output):
                 [o_mux, o_muy, o_sx, o_sy, o_corr] = np.split(pedoutput[0], 5, 0)
                 mux, muy, sx, sy, corr = o_mux[0], o_muy[0], np.exp(o_sx[0]), np.exp(o_sy[0]), np.tanh(o_corr[0])
