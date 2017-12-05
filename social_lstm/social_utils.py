@@ -33,7 +33,7 @@ class SocialDataLoader():
         self.used_data_dirs = [self.data_dirs[x] for x in datasets]
         self.infer = infer
 
-        self.size_data_state = 5
+        self.size_data_state = 7
 
         # Number of datasets
         self.numDatasets = len(self.data_dirs)
@@ -160,8 +160,12 @@ class SocialDataLoader():
                     vel_x = pedsInFrame[4, pedsInFrame[1, :] == ped][0]
                     vel_y = pedsInFrame[5, pedsInFrame[1, :] == ped][0]
 
+                    # Extract their w and z angle component
+                    angle_w = pedsInFrame[6, pedsInFrame[1, :] == ped][0]
+                    angle_z = pedsInFrame[7, pedsInFrame[1, :] == ped][0]
+
                     # Add their pedID, x, y to the row of the numpy array
-                    pedsWithPos.append([ped, current_x, current_y, vel_x, vel_y])
+                    pedsWithPos.append([ped, current_x, current_y, vel_x, vel_y, angle_w, angle_z])
                 #     TODO workaround remove elements outside maxnumped
 
                 #TODO sort by distance and clip to MaxnumPed

@@ -33,7 +33,7 @@ class SocialModel():
         # Store rnn size and grid_size
         self.rnn_size = args.rnn_size
         self.grid_size = args.grid_size
-        self.size_data_state = 5
+        self.size_data_state = 7
 
         # Maximum number of peds
         self.maxNumPeds = args.maxNumPeds
