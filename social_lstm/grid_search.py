@@ -58,7 +58,7 @@ class TrainInput:
         self.seq_length = 12
         # self.num_epochs = 50
         self.num_epochs = num_epochs
-        self.save_every = 400
+        self.save_every = 10
         self.grad_clip = 10.
         self.learning_rate = 0.005
         self.decay_rate = 0.95

@@ -33,7 +33,7 @@ def main():
     parser.add_argument('--num_epochs', type=int, default=50,
                         help='number of epochs')
     # Frequency at which the model should be saved parameter
-    parser.add_argument('--save_every', type=int, default=400,
+    parser.add_argument('--save_every', type=int, default=10,
                         help='save frequency')
     # TODO: (resolve) Clipping gradients for now. No idea whether we should
     # Gradient value at which it should be clipped
@@ -96,7 +96,7 @@ def train(args):
 
     # Log directory
     log_directory = 'log/'
-    log_directory += '-'.join(str(args.trainingDataset)) + '/'
+    log_directory += str(args.trainingDataset) + '/'
     if not os.path.exists(log_directory):
         os.makedirs(log_directory)
 
@@ -105,8 +105,8 @@ def train(args):
     log_file = open(os.path.join(log_directory, 'val.txt'), 'w')
 
     # Save directory
-    save_directory = args.save_path+'save/'
-    save_directory += '-'.join(str(args.trainingDataset)) + '/'
+    save_directory = os.path.join(args.save_path,'save/')
+    save_directory += str(args.trainingDataset) + '/'
     if not os.path.exists(save_directory):
         os.makedirs(save_directory)
 
@@ -203,7 +203,7 @@ def train(args):
 
             print(
                 "Epoch {}, epoch_loss = {:.3f}"
-                    .format(
+                .format(
                     e,
                     loss_epoch))
 
@@ -277,10 +277,11 @@ def train(args):
             print '*****************'
 
             # Save the model after each epoch
-            print 'Saving model'
-            checkpoint_path = os.path.join(save_directory, 'social_model.ckpt')
-            saver.save(sess, checkpoint_path, global_step=e)
-            print("model saved to {}".format(checkpoint_path))
+            if e % args.save_every == 0 and (e > 0):
+                print 'Saving model'
+                checkpoint_path = os.path.join(save_directory, 'social_model.ckpt')
+                saver.save(sess, checkpoint_path, global_step=e)
+                print("model saved to {}".format(checkpoint_path))
 
         print 'Best epoch', best_epoch, 'Best validation loss', best_val_loss
         log_file.write(str(best_epoch)+','+str(best_val_loss))
