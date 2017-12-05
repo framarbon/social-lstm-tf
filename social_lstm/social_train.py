@@ -33,7 +33,7 @@ def main():
     parser.add_argument('--num_epochs', type=int, default=50,
                         help='number of epochs')
     # Frequency at which the model should be saved parameter
-    parser.add_argument('--save_every', type=int, default=400,
+    parser.add_argument('--save_every', type=int, default=10,
                         help='save frequency')
     # TODO: (resolve) Clipping gradients for now. No idea whether we should
     # Gradient value at which it should be clipped
@@ -248,10 +248,11 @@ def train(args):
             print '*****************'
 
             # Save the model after each epoch
+            if e % args.save_every == 0 and (e > 0):
             print 'Saving model'
-            checkpoint_path = os.path.join(save_directory, 'social_model.ckpt')
-            saver.save(sess, checkpoint_path, global_step=e)
-            print("model saved to {}".format(checkpoint_path))
+                checkpoint_path = os.path.join(save_directory, 'social_model.ckpt')
+                saver.save(sess, checkpoint_path, global_step=e)
+                print("model saved to {}".format(checkpoint_path))
 
         print 'Best epoch', best_epoch, 'Best validation loss', best_val_loss
         log_file.write(str(best_epoch)+','+str(best_val_loss))
