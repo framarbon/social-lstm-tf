@@ -86,7 +86,7 @@ def train(args):
 
     # Log directory
     log_directory = 'log/'
-    log_directory += str('-'.join(str(args.trainingDataset))) + '/'
+    log_directory += str(''.join(map(str,args.trainingDataset))) + '/'
     if not os.path.exists(log_directory):
         os.makedirs(log_directory)
 
@@ -96,7 +96,7 @@ def train(args):
 
     # Save directory
     save_directory = args.save_path+'save/'
-    save_directory += str('-'.join(str(args.trainingDataset))) + '/'
+    save_directory += str(''.join(map(str,args.trainingDataset))) + '/'
     if not os.path.exists(save_directory):
         os.makedirs(save_directory)
 
@@ -191,11 +191,7 @@ def train(args):
                 '''
             loss_epoch /= data_loader.num_batches
 
-            print(
-                "Epoch {}, epoch_loss = {:.3f}"
-                    .format(
-                    e,
-                    loss_epoch))
+            print('(epoch {}), Epoch training loss = {:.3f}'.format(e, loss_epoch))
 
             # train_cost = tf.Summary(value=[tf.Summary.Value(tag="TrainingCost", simple_value=loss_epoch)])
             # writer.add_summary(train_cost, e * data_loader.num_batches + b)
@@ -261,7 +257,7 @@ def train(args):
                 best_val_loss = loss_epoch
                 best_epoch = e
 
-            print('(epoch {}), valid_epoch_loss = {:.3f}'.format(e, loss_epoch))
+            print('(epoch {}), Epoch validation loss = {:.3f}'.format(e, loss_epoch))
             print 'Best epoch', best_epoch, 'Best validation loss', best_val_loss
             log_file_curve.write(str(loss_epoch)+'\n')
             print '*****************'
