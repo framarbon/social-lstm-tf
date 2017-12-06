@@ -29,10 +29,10 @@ class GridSearch:
             # Initialize parameters
             hstring = self.get_hstring(values)
             inputs.set_learning_rate(values[0])
-            inputs.set_lambda_param(values[1])
-            inputs.set_decay_rate(values[2])
-            inputs.set_grad_clip(values[3])
-            inputs.set_batch_size(values[4])
+            # inputs.set_lambda_param(values[1])
+            inputs.set_decay_rate(values[1])
+            # inputs.set_grad_clip(values[3])
+            # inputs.set_batch_size(values[4])
             inputs.set_writer(hstring)
 
             print "Input parameters"
