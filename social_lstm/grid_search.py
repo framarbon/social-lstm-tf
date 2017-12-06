@@ -23,7 +23,7 @@ class GridSearch:
 
         self.len = len(self.paramList)
 
-        inputs = TrainInput(args.num_epochs, args.maxNumPeds, args.save_path, args.leaveDataset)
+        inputs = TrainInput(args.num_epochs, args.maxNumPeds, args.save_path, args.trainingDataset)
 
         for values in self.valueList:
             # Initialize parameters
@@ -34,7 +34,7 @@ class GridSearch:
             inputs.set_grad_clip(values[3])
             inputs.set_batch_size(values[4])
             inputs.set_writer(hstring)
-            # TODO inputs.set_leaveDataset
+
             print "Input parameters"
             for index in range(self.len):
                 print self.paramList[index]+'='+str(values[index])
@@ -53,7 +53,7 @@ class GridSearch:
 
 
 class TrainInput:
-    def __init__(self, num_epochs=1, maxNumPeds=40, save_path="", leaveDataset=4):
+    def __init__(self, num_epochs=1, maxNumPeds=40, save_path="", trainingDataset=['5']):
         self.rnn_size = 128
         self.num_layers = 1
         self.model = 'lstm'
@@ -70,7 +70,7 @@ class TrainInput:
         self.neighborhood_size = 32
         self.grid_size = 4
         self.maxNumPeds = maxNumPeds
-        self.leaveDataset = leaveDataset
+        self.trainingDataset = trainingDataset
         self.lambda_param = 0.0005
         self.writer = "training"
         self.save_path = save_path
@@ -148,9 +148,8 @@ if __name__ == '__main__':
     # Maximum number of pedestrians to be considered
     parser.add_argument('--maxNumPeds', type=int, default=55,
                         help='Maximum Number of Pedestrians')
-    # # The leave out dataset
-    parser.add_argument('--leaveDataset', type=int, default=3,
-                        help='The dataset index to be left out in training')
+    # The training dataset
+    parser.add_argument('-t', '--trainingDataset', type=int, nargs='+', default=[5])
     # # Lambda regularization parameter (L2)
     # parser.add_argument('--lambda_param', type=float, default=0.0005,
     #                     help='L2 regularization parameter')

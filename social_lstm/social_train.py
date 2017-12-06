@@ -62,7 +62,7 @@ def main():
     parser.add_argument('--maxNumPeds', type=int, default=40,
                         help='Maximum Number of Pedestrians')
     # The training dataset
-    parser.add_argument('-t', '--trainingDataset', type=int, nargs='+', default=[2,3,4])
+    parser.add_argument('-t', '--trainingDataset', type=int, nargs='+', default=[5])
     # Lambda regularization parameter (L2)
     parser.add_argument('--lambda_param', type=float, default=0.0005,
                         help='L2 regularization parameter')
