@@ -3,6 +3,7 @@ import argparse
 import os
 import time
 import pickle
+import numpy as np
 # import ipdb
 
 from social_model import SocialModel
@@ -174,6 +175,14 @@ def train(args):
 
                     train_loss, _ = sess.run([model.cost, model.train_op], feed)
                     loss_batch += train_loss
+
+                    if train_loss == np.nan:
+                        print "Loss batch "+str(b)+"/ "+str(batch)+'\n'
+                        print str(train_loss)+'\n'
+                        print "Max x "+str(np.asarray(x_batch)[:,:,1].max(axis=1))+" min "+str(np.asarray(x_batch)[:,:,1].min(axis=1))+'\n'
+                        print "Max y "+str(np.asarray(x_batch)[:,:,2].max(axis=1))+" min "+str(np.asarray(x_batch)[:,:,2].min(axis=1))+'\n'
+                        print "\n"+'\n'
+
 
                 end = time.time()
                 loss_batch = loss_batch / data_loader.batch_size
