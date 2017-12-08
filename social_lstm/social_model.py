@@ -71,7 +71,7 @@ class SocialModel():
 
         # Output dimension of the model
         self.output_size = 5
-        self.mixture_size = 4
+        self.mixture_size = args.num_dist
 
         # Define embedding and output layers
         self.define_embedding_and_output_layers(args)
