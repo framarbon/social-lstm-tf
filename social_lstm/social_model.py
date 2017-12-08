@@ -415,8 +415,9 @@ class SocialModel():
         dist = tf.contrib.distributions.MultivariateNormalDiag(loc=mu, scale_diag=s)
         # Sampling the distributions
         samples = dist.sample()
+        samples = tf.expand_dims(samples, 1)
         # weighting the biv. gaussian distributions
-        result = tf.matmul(samples, alph)
+        result = tf.squeeze(tf.matmul(alph, samples))
 
         return result
 
