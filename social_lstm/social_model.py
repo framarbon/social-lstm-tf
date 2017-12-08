@@ -312,7 +312,7 @@ class SocialModel():
         log_pdf = tf.expand_dims(log_pdf, 1)
 
         # weighting the biv. gaussian distributions
-        result = tf.squeeze(tf.matmul(z_alpha, log_pdf))
+        result = -tf.squeeze(tf.matmul(z_alpha, log_pdf))
 
         return result
 
