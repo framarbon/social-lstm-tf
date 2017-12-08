@@ -115,7 +115,7 @@ def train(args):
 
     # Save directory
     save_directory = os.path.join(args.save_path,'save/')
-    save_directory += ''.join(map(str, args.trainingDataset)) + '/'
+    save_directory += ''.join(map(str,args.trainingDataset)) + '/'
     if not os.path.exists(save_directory):
         os.makedirs(save_directory)
 
