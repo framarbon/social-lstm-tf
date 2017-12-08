@@ -103,7 +103,7 @@ def train(args):
     log_file = open(os.path.join(log_directory, 'val.txt'), 'w')
 
     # Save directory
-    save_directory = args.save_path+'save/'
+    save_directory = os.path.join(args.save_path,'save/')
     save_directory += str(''.join(map(str,args.trainingDataset))) + '/'
     if not os.path.exists(save_directory):
         os.makedirs(save_directory)
