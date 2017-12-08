@@ -62,7 +62,10 @@ def main():
     parser.add_argument('--maxNumPeds', type=int, default=40,
                         help='Maximum Number of Pedestrians')
     # The training dataset
-    parser.add_argument('-t', '--trainingDataset', type=int, nargs='+', default=[2,3,4])
+    parser.add_argument('-t', '--trainingDataset', type=int, nargs='+', default=[5])
+    # The validation dataset
+    parser.add_argument('-v', '--validDataset', type=int, default=-1)
+
     # Lambda regularization parameter (L2)
     parser.add_argument('--lambda_param', type=float, default=0.0005,
                         help='L2 regularization parameter')
@@ -84,13 +87,19 @@ def main():
 
 def train(args):
     datasets = args.trainingDataset
+    v_index = -1
+    if args.validDataset >= 0:
+        datasets = [args.validDataset] + datasets
+        v_index = 0
+    print "Datasetused for training: "+str(datasets)
+
     if not args.save_path:
         args.save_path = os.getcwd()
     if not args.pipeline:
         args.dist_map = get_distMap(args.neighborhood_size)
 
     # Create the SocialDataLoader object
-    data_loader = SocialDataLoader(args.batch_size, args.seq_length, args.maxNumPeds, datasets, forcePreProcess=True, infer=False)
+    data_loader = SocialDataLoader(args.batch_size, args.seq_length, args.maxNumPeds, datasets, forcePreProcess=True, infer=False, valid_index=v_index)
 
     args.obs_maps = data_loader.get_obs_map()
 
