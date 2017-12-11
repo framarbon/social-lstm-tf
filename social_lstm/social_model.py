@@ -337,7 +337,7 @@ class SocialModel():
 
         z_alph = tf.exp(z_alph)
 
-        normalize_alph = tf.reciprocal(tf.reduce_sum(z_alph, 1, keep_dims=True))
+        normalize_alph = tf.squeeze(tf.reciprocal(tf.reduce_sum(z_alph, 1, keep_dims=True)))
         z_alph = tf.scalar_mul(normalize_alph, z_alph)
 
         return [z_mu, z_s, z_alph]
