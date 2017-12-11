@@ -333,7 +333,7 @@ class SocialModel():
         # z_alph = tf.nn.softmax(z_alph)
 
         max_alph = tf.reduce_max(z_alph, 1, keep_dims=True)
-        alph = tf.substract(z_alph, max_alph)
+        alph = tf.subtract(z_alph, max_alph)
 
         z_alph = tf.exp(z_alph)
 
