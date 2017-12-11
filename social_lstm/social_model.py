@@ -316,7 +316,7 @@ class SocialModel():
         result = tf.reduce_sum(result, 1, keep_dims=True)
         result = -tf.log(result)
 
-        return result
+        return tf.squeeze(result)
 
     def get_coef(self, output):
         # eq 20 -> 22 of Graves (2013)
