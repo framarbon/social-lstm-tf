@@ -308,11 +308,13 @@ class SocialModel():
 
         # Calculate the Log PDF of the data w.r.t to the distribution
         dist = tf.contrib.distributions.MultivariateNormalDiag(loc=z_mu, scale_diag=z_s)
-        log_pdf = dist.log_prob(data)
-        log_pdf = tf.expand_dims(log_pdf, 1)
+        pdf = dist.prob(data)
+        pdf = tf.expand_dims(pdf, 1)
 
         # weighting the biv. gaussian distributions
-        result = -tf.squeeze(tf.matmul(z_alpha, log_pdf))
+        result = tf.matmul(z_alpha, pdf)
+        result = tf.reduce_sum(result, 1, keep_dims=True)
+        result = -tf.log(result)
 
         return result
 
@@ -328,7 +330,15 @@ class SocialModel():
         z_mu = tf.stack([tf.squeeze(z_mux), tf.squeeze(z_muy)], axis=1)
         z_s = tf.stack([tf.squeeze(z_sx), tf.squeeze(z_sy)], axis=1)
         # Tanh applied to keep it in the range [-1, 1]
-        z_alph = tf.nn.softmax(z_alph)
+        # z_alph = tf.nn.softmax(z_alph)
+
+        max_alph = tf.reduce_max(z_alph, 1, keep_dims=True)
+        alph = tf.substract(z_alph, max_alph)
+
+        z_alph = tf.exp(z_alph)
+
+        normalize_alph = tf.inv(tf.reduce_sum(z_alph, 1, keep_dims=True))
+        z_alph = tf.mul(normalize_alph, z_alph)
 
         return [z_mu, z_s, z_alph]
 
