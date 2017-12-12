@@ -174,10 +174,8 @@ def train(args):
 
                     if d_batch == 0 and datasets[0] == 0:
                         dataset_data = [640, 480]
-                    elif d_batch > 4:
-                        dimensions = [50, 50]
-                        print "Dimensions"
-                        print dimensions
+                    elif datasets[0] > 4:
+                        dataset_data = [50, 50]
                     else:
                         dataset_data = [720, 576]
 
@@ -247,10 +245,8 @@ def train(args):
 
                     if d_batch == 0 and datasets[0] == 0:
                         dataset_data = [640, 480]
-                    elif d_batch > 4:
-                        dimensions = [50, 50]
-                        print "Dimensions"
-                        print dimensions
+                    elif datasets[0] > 4:
+                        dataset_data = [50, 50]
                     else:
                         dataset_data = [720, 576]
 
