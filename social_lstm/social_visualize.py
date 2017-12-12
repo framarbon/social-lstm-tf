@@ -33,6 +33,10 @@ def plot_trajectories(true_trajs, pred_trajs, obs_length, name):
     height = im.shape[1]
     print 'width '+str(width)
     print 'height '+str(height)
+
+    limits_x = []
+    limits_y = []
+
     # width = 1
     # height = 1
 
@@ -52,9 +56,9 @@ def plot_trajectories(true_trajs, pred_trajs, obs_length, name):
                 continue
             else:
                 # If he is a ped
-                if true_pos[j, 1] > 1 or true_pos[j, 1] < 0:
+                if true_pos[j, 1] > 1 or true_pos[j, 1] < -1:
                     continue
-                elif true_pos[j, 2] > 1 or true_pos[j, 2] < 0:
+                elif true_pos[j, 2] > 1 or true_pos[j, 2] < -1:
                     continue
 
                 if (j not in traj_data) and i < obs_length:
@@ -64,23 +68,32 @@ def plot_trajectories(true_trajs, pred_trajs, obs_length, name):
                     traj_data[j][0].append(true_pos[j, 1:3])
                     traj_data[j][1].append(pred_pos[j, 1:3])
 
-    for j in traj_data:
+    for index, j in enumerate(traj_data):
         # c = np.random.rand(3, 1)
         c = [1, 0, 0]
         c2 = [0, 0, 1]
+        c3 = [0, 1, 0]
+        c4 = [1, 0, 1]
         true_traj_ped = traj_data[j][0]  # List of [x,y] elements
         pred_traj_ped = traj_data[j][1]
 
-        true_x = [(p[0]+1.)*height/2. for p in true_traj_ped]
-        true_y = [(1.+p[1])*width/2. for p in true_traj_ped]
-        pred_x = [(p[0]+1.)*height/2. for p in pred_traj_ped]
-        pred_y = [(1.+p[1])*width/2. for p in pred_traj_ped]
+        true_x = [(1.+p[0])*height/2. for p in true_traj_ped]
+        true_y = [(1.+p[1])*width/2.  for p in true_traj_ped]
+        pred_x = [(1.+p[0])*height/2. for p in pred_traj_ped]
+        pred_y = [(1.+p[1])*width/2.  for p in pred_traj_ped]
+
+        if index == 0:
+            c2= c4
+            c = c3
+            limits_x=pred_x
+            limits_y=pred_y
 
         plt.plot(true_x, true_y, color=c, linestyle='solid', marker='o')
         plt.plot(pred_x, pred_y, color=c2, linestyle='dashed', marker='x')
 
-    # plt.ylim((0, 1))
-    # plt.xlim((0, 1))
+
+    plt.xlim(min(limits_x[0],limits_x[-1])-0.12*width, max(limits_x[0],limits_x[-1])+0.12*width)
+    plt.ylim(min(limits_y[0],limits_y[-1])-0.12*height, max(limits_y[0],limits_y[-1])+0.12*height)
     plt.show()
     # plt.savefig('plot/'+name+'.png')
     plt.gcf().clear()

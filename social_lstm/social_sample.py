@@ -130,10 +130,8 @@ def main():
 
         if d_batch == 0 and dataset[0] == 0:
             dimensions = [640, 480]
-        elif d_batch > 4:
+        elif dataset[0] > 4:
             dimensions = [50, 50]
-            print "Dimensions"
-            print dimensions
         else:
             dimensions = [720, 576]
 
