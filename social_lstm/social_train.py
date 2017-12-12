@@ -53,7 +53,7 @@ def main():
     parser.add_argument('--embedding_size', type=int, default=64,
                         help='Embedding dimension for the spatial coordinates')
     # Size of neighborhood to be considered parameter
-    parser.add_argument('--neighborhood_size', type=int, default=32,
+    parser.add_argument('--neighborhood_size', type=int, default=12,
                         help='Neighborhood size to be considered for social grid')
     # Size of the social grid parameter
     parser.add_argument('--grid_size', type=int, default=4,
@@ -174,6 +174,10 @@ def train(args):
 
                     if d_batch == 0 and datasets[0] == 0:
                         dataset_data = [640, 480]
+                    elif d_batch > 4:
+                        dimensions = [50, 50]
+                        print "Dimensions"
+                        print dimensions
                     else:
                         dataset_data = [720, 576]
 
@@ -243,6 +247,10 @@ def train(args):
 
                     if d_batch == 0 and datasets[0] == 0:
                         dataset_data = [640, 480]
+                    elif d_batch > 4:
+                        dimensions = [50, 50]
+                        print "Dimensions"
+                        print dimensions
                     else:
                         dataset_data = [720, 576]
 
