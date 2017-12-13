@@ -382,7 +382,7 @@ class SocialModel():
         dimensions = obs_map.get_shape().as_list()
         dimensions = [x * 0.5 for x in dimensions]
         half_n = self.neighborhood_size / 2
-        obs_map = tf.pad(obs_map, [[half_n, half_n], [half_n, half_n]], "CONSTANT")
+        obs_map = tf.pad(obs_map, [[half_n, half_n], [half_n, half_n]], "CONSTANT", constant_values=1.0)
 
         # For each pedestrian
         for ped in range(self.maxNumPeds):
