@@ -376,8 +376,8 @@ class SocialModel():
         # Squeeze tensors to form MNP x (GS**2) matrices
         grid_frame_ped_data = [tf.squeeze(input_, [0]) for input_ in grid_frame_ped_data]
         # Dimensions occupancy map (height, width)
-        # obs_map = tf.squeeze(tf.gather(self.obs_map, [self.map_index]))
-        obs_map = tf.squeeze(self.obs_map)
+        obs_map = tf.squeeze(tf.gather(self.obs_map, [self.map_index]))
+        # obs_map = tf.squeeze(self.obs_map)
         dimensions = obs_map.get_shape().as_list()
         dimensions = [x * 0.5 for x in dimensions]
         half_n = self.neighborhood_size / 2
