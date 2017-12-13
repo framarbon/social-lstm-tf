@@ -306,7 +306,7 @@ def get_distMap(neighborhood_size):
     # Neighborhood size
     ns = neighborhood_size
     # Half Neighborhood size
-    hns = ns / 2
+    hns = (ns-1) / 2.
     distMap = np.zeros([ns, ns], dtype=np.float)
     for x in range(ns):
         xnorm = (x - hns) ** 2
@@ -315,6 +315,8 @@ def get_distMap(neighborhood_size):
             totalnorm = (xnorm + ynorm)
             if totalnorm > 1e-5:
                 distMap[x, y] = 1. / totalnorm
+            elif totalnorm == 0:
+                distMap[x,y] = 1.
     return distMap
 
 if __name__ == '__main__':

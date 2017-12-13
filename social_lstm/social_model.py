@@ -33,6 +33,7 @@ class SocialModel():
         # Store rnn size and grid_size
         self.rnn_size = args.rnn_size
         self.grid_size = args.grid_size
+        self.tensor_size = args.rnn_size + 2
 
         # Maximum number of peds
         self.maxNumPeds = args.maxNumPeds
@@ -148,7 +149,7 @@ class SocialModel():
                     self.spatial_input = tf.slice(current_frame_data, [ped, 1], [1, 2])  # Tensor of shape (1,2)
                     # Extract the social tensor of the current ped
                     self.tensor_input = tf.slice(social_tensor, [ped, 0], [1,
-                                                                           args.grid_size * args.grid_size * args.rnn_size])  # Tensor of shape (1, g*g*r)
+                                                                           args.grid_size * args.grid_size * self.tensor_size])  # Tensor of shape (1, g*g*r)
 
                 with tf.name_scope("embeddings_operations"):
                     # Embed the spatial input
@@ -255,20 +256,20 @@ class SocialModel():
             # tf.summary.histogram("weights", self.embedding_w)
             # tf.summary.histogram("biases", self.embedding_b)
 
-        with tf.variable_scope("obstacle_embedding"):
-            self.embedding_o_r_w = tf.get_variable("embedding_o_r_w", [self.grid_size**2, self.embedding_size/2],
-                                                 initializer=tf.truncated_normal_initializer(stddev=0.1))
-            self.embedding_o_r_b = tf.get_variable("embedding_o_r_b", [self.embedding_size/2],
-                                                 initializer=tf.constant_initializer(0.1))
-            self.embedding_o_d_w = tf.get_variable("embedding_o_d_w", [self.grid_size**2, self.embedding_size/2],
-                                                 initializer=tf.truncated_normal_initializer(stddev=0.1))
-            self.embedding_o_d_b = tf.get_variable("embedding_o_d_b", [self.embedding_size/2],
-                                                 initializer=tf.constant_initializer(0.1))
+        # with tf.variable_scope("obstacle_embedding"):
+        #     self.embedding_o_r_w = tf.get_variable("embedding_o_r_w", [self.grid_size**2, self.embedding_size/2],
+        #                                          initializer=tf.truncated_normal_initializer(stddev=0.1))
+        #     self.embedding_o_r_b = tf.get_variable("embedding_o_r_b", [self.embedding_size/2],
+        #                                          initializer=tf.constant_initializer(0.1))
+        #     self.embedding_o_d_w = tf.get_variable("embedding_o_d_w", [self.grid_size**2, self.embedding_size/2],
+        #                                          initializer=tf.truncated_normal_initializer(stddev=0.1))
+        #     self.embedding_o_d_b = tf.get_variable("embedding_o_d_b", [self.embedding_size/2],
+        #                                          initializer=tf.constant_initializer(0.1))
 
         # Define variables for the social tensor embedding layer
         with tf.variable_scope("tensor_embedding"):
             self.embedding_t_w = tf.get_variable("embedding_t_w",
-                                                 [self.grid_size * self.grid_size * self.rnn_size, self.embedding_size],
+                                                 [self.grid_size * self.grid_size * self.tensor_size, self.embedding_size],
                                                  initializer=tf.truncated_normal_initializer(stddev=0.1))
             self.embedding_t_b = tf.get_variable("embedding_t_b", [self.embedding_size],
                                                  initializer=tf.constant_initializer(0.1))
@@ -423,21 +424,20 @@ class SocialModel():
                                   padding='SAME',
                                   pooling_type="MAX")
                 pool_dist_grid = tf.reshape(pool_dist, [self.grid_size * self.grid_size, 1])
-                with tf.name_scope("obstacle_embeddings"):
+                # with tf.name_scope("obstacle_embeddings"):
                     # Embed the spatial input
-                    embedded_ratio = tf.nn.relu(tf.nn.xw_plus_b(tf.transpose(pool_ratio_grid), self.embedding_o_r_w, self.embedding_o_r_b))
-                    embedded_dist = tf.nn.relu(tf.nn.xw_plus_b(tf.transpose(pool_dist_grid), self.embedding_o_d_w, self.embedding_o_d_b))
-                    static_tensor = tf.concat([embedded_dist, embedded_ratio, tf.zeros([1, self.embedding_size])], 1)
-
+                    # embedded_ratio = tf.nn.relu(tf.nn.xw_plus_b(tf.transpose(pool_ratio_grid), self.embedding_o_r_w, self.embedding_o_r_b))
+                    # embedded_dist = tf.nn.relu(tf.nn.xw_plus_b(tf.transpose(pool_dist_grid), self.embedding_o_d_w, self.embedding_o_d_b))
+                social_tensor_ped = tf.concat([social_tensor_ped, pool_dist_grid, pool_ratio_grid], 1)
                 # Including static obstacle information into the social tensor
-                social_tensor_ped = tf.add(social_tensor_ped, static_tensor)
-                social_tensor[ped] = tf.reshape(social_tensor_ped, [1, self.grid_size * self.grid_size, self.rnn_size])
+                # social_tensor_ped = tf.add(social_tensor_ped, static_tensor)
+                social_tensor[ped] = tf.reshape(social_tensor_ped, [1, self.grid_size * self.grid_size, self.tensor_size])
 
         # Concatenate the social tensor from a list to a tensor of shape MNP x (GS**2) x RNN_size
         social_tensor = tf.concat(social_tensor, 0)
         # Reshape the tensor to match the dimensions MNP x (GS**2 * RNN_size)
         social_tensor = tf.reshape(social_tensor,
-                                   [self.maxNumPeds, self.grid_size * self.grid_size * self.rnn_size])
+                                   [self.maxNumPeds, self.grid_size * self.grid_size * self.tensor_size])
         return social_tensor
 
     def sample_gaussian_2d(self, mux, muy, sx, sy, rho):
