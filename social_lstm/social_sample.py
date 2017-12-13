@@ -117,13 +117,15 @@ def main():
     data_loader.reset_batch_pointer()
 
     results = []
+    results2 = []
 
     # Variable to maintain total error
     total_error = 0
     # For each batch
-    for b in range(data_loader.num_batches):
+    for b in range(10):
         # Get the source, target and dataset data for the next batch
         x, y, d = data_loader.next_batch(randomUpdate=False)
+        inter_result = []
 
         # Batch size is 1
         x_batch, y_batch, d_batch = x[0], y[0], d[0]
@@ -141,18 +143,29 @@ def main():
         obs_grid = grid_batch[:sample_args.obs_length]
         # obs_traj is an array of shape obs_length x maxNumPeds x 3
 
+        inter_result.append((x[0],sample_args.obs_length))
+
         print "********************** SAMPLING A NEW TRAJECTORY", b, "******************************"
-        complete_traj = model.sample(sess, obs_traj, obs_grid, dimensions, x_batch, sample_args.pred_length)
+        batch_error = 0
+        for i in range(10):
+            complete_traj = model.sample(sess, obs_traj, obs_grid, dimensions, x_batch, sample_args.pred_length)
+            inter_result.append((complete_traj))
+            batch_error += get_mean_error(complete_traj, x[0], sample_args.obs_length, saved_args.maxNumPeds)
+
+        batch_error= batch_error/10.
+
+        results.append((inter_result))
 
         # ipdb.set_trace()
         # complete_traj is an array of shape (obs_length+pred_length) x maxNumPeds x 3
-        total_error += get_mean_error(complete_traj, x[0], sample_args.obs_length, saved_args.maxNumPeds)
+        total_error += batch_error
 
         print "Processed trajectory number : ", b, "out of ", data_loader.num_batches, " trajectories"
 
         # plot_trajectories(x[0], complete_traj, sample_args.obs_length)
         # return
-        results.append((x[0], complete_traj, sample_args.obs_length))
+
+        # results.append((x[0], complete_traj, sample_args.obs_length))
 
     # Print the mean error across all the batches
     print "Total mean error of the model is ", total_error/data_loader.num_batches
