@@ -388,23 +388,16 @@ class SocialModel():
             # Compute the static obstacles tensor
             # ped = tf.Print(ped, [ped], "Ped ID")
             position_ped = tf.slice(current_frame_data, [ped, 1], [1, 2])  # Tensor of shape (1,2)
-            position_ped = tf.Print(position_ped, [position_ped], "Local position 1: ")
-
             position_ped = tf.multiply(position_ped, tf.constant([1., -1.], tf.float32))
             position_ped = tf.add(position_ped, tf.ones([1, 2], tf.float32))
-            position_ped = tf.Print(position_ped, [position_ped], "Local position 2: ")
             position_ped = tf.clip_by_value(position_ped, 0., 2.)
 
             global_position_ped = tf.rint(tf.matmul(position_ped, [[0, dimensions[1]], [dimensions[0], 0]]))
             global_position_ped = tf.squeeze(tf.cast(global_position_ped, tf.int32))
 
-            global_position_ped = tf.Print(global_position_ped, [global_position_ped], "Global position")
-
             # ROI of the obstacle map centered at ped
             obs_map_ped = tf.slice(obs_map, global_position_ped,
                                    [self.neighborhood_size, self.neighborhood_size])
-
-            obs_map_ped = tf.Print(obs_map_ped, [obs_map_ped], "Full grid", summarize=144)
             # Mask of the ROI occupancy map
             occ_mask = tf.where(tf.greater(obs_map_ped, tf.zeros_like(obs_map_ped)),
                                 tf.ones_like(obs_map_ped), tf.zeros_like(obs_map_ped))
@@ -419,8 +412,6 @@ class SocialModel():
                                     strides=[cell_size, cell_size],
                                     padding='SAME',
                                     pooling_type="AVG")
-            pool_ratio = tf.Print(pool_ratio, [pool_ratio], "Compressed grid", summarize=12)
-
             pool_ratio_grid = tf.reshape(pool_ratio, [self.grid_size * self.grid_size, 1])
             # Obtaining the closest obstacle for each cell
             tensor_dist_map = tf.reshape(dist_map,
