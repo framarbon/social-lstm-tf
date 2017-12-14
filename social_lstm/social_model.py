@@ -434,7 +434,7 @@ class SocialModel():
 
         def do_nothing():
             # Nothing happens..
-            return tf.zeros([1, self.grid_size * self.grid_size, self.rnn_size])
+            return tf.zeros([1, self.grid_size * self.grid_size, self.tensor_size])
 
         # For each pedestrian
         for ped in range(self.maxNumPeds):
