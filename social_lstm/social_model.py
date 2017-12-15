@@ -133,7 +133,7 @@ class SocialModel():
             current_frame_data = frame  # MNP x 3 tensor
             current_grid_frame_data = grid_frame_data[seq]  # MNP x MNP x (GS**2) tensor
             # MNP x (GS**2 * RNN_size)
-            social_tensor = self.getSocialTensor(current_frame_data, current_grid_frame_data, self.output_states)
+            social_tensor = self.getSocialTensor(current_frame_data, current_grid_frame_data, self.output_states, args.scale)
             # NOTE: Using a tensor of zeros as the social tensor
             # social_tensor = tf.zeros([args.maxNumPeds, args.grid_size*args.grid_size*args.rnn_size])
 
@@ -356,7 +356,7 @@ class SocialModel():
 
         return [z_mux, z_muy, z_sx, z_sy, z_corr]
 
-    def getSocialTensor(self, current_frame_data, grid_frame_data, output_states):
+    def getSocialTensor(self, current_frame_data, grid_frame_data, output_states, scale=1):
         '''
         Computes the social tensor for all the maxNumPeds in the frame
         params:
@@ -379,8 +379,8 @@ class SocialModel():
         obs_map = tf.squeeze(tf.gather(self.obs_map, [self.map_index]))
         # obs_map = tf.squeeze(self.obs_map)
         dimensions = obs_map.get_shape().as_list()
-        dimensions = [x * args.scale/2.0 for x in dimensions]
-        new_ns = self.neighborhood_size*args.scale
+        dimensions = [x * scale/2.0 for x in dimensions]
+        new_ns = self.neighborhood_size*scale
         half_n = new_ns / 2
         obs_map = tf.pad(obs_map, [[half_n, half_n], [half_n, half_n]], "CONSTANT", constant_values=1.0)
 
