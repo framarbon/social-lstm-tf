@@ -427,10 +427,10 @@ class SocialModel():
             pool_dist_grid = tf.reshape(pool_dist, [self.grid_size * self.grid_size, 1])
             with tf.name_scope("obstacle_embeddings"):
                 # Embed the spatial input
-            embedded_ratio = tf.nn.relu(tf.nn.xw_plus_b(tf.transpose(pool_ratio_grid), self.embedding_o_r_w, self.embedding_o_r_b))
-            embedded_dist = tf.nn.relu(tf.nn.xw_plus_b(tf.transpose(pool_dist_grid), self.embedding_o_d_w, self.embedding_o_d_b))
-            embedded_ratio = tf.reshape(embedded_ratio, [self.grid_size * self.grid_size, self.embedding_size/2])
-            embedded_dist = tf.reshape(embedded_dist, [self.grid_size * self.grid_size, self.embedding_size / 2])
+                embedded_ratio = tf.nn.relu(tf.nn.xw_plus_b(tf.transpose(pool_ratio_grid), self.embedding_o_r_w, self.embedding_o_r_b))
+                embedded_dist = tf.nn.relu(tf.nn.xw_plus_b(tf.transpose(pool_dist_grid), self.embedding_o_d_w, self.embedding_o_d_b))
+                embedded_ratio = tf.reshape(embedded_ratio, [self.grid_size * self.grid_size, self.embedding_size/2])
+                embedded_dist = tf.reshape(embedded_dist, [self.grid_size * self.grid_size, self.embedding_size / 2])
             social_tensor_ped = tf.concat([social_tensor_ped, embedded_dist, embedded_ratio], 1)
             # Including static obstacle information into the social tensor
             # social_tensor_ped = tf.add(social_tensor_ped, static_tensor)
