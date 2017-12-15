@@ -379,10 +379,9 @@ class SocialModel():
         # Dimensions occupancy map (height, width)
         obs_map = tf.squeeze(tf.gather(self.obs_map, [self.map_index]))
         # obs_map = tf.squeeze(self.obs_map)
-        scale_factor = 10
         dimensions = obs_map.get_shape().as_list()
-        dimensions = [x * scale_factor/2.0 for x in dimensions]
-        new_ns = self.neighborhood_size*scale_factor
+        dimensions = [x * args.scale/2.0 for x in dimensions]
+        new_ns = self.neighborhood_size*args.scale
         half_n = new_ns / 2
         obs_map = tf.pad(obs_map, [[half_n, half_n], [half_n, half_n]], "CONSTANT", constant_values=1.0)
 
