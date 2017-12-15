@@ -380,7 +380,7 @@ class SocialModel():
         obs_map = tf.squeeze(tf.gather(self.obs_map, [self.map_index]))
         # obs_map = tf.squeeze(self.obs_map)
         dimensions = obs_map.get_shape().as_list()
-        dimensions = [x * scale/2.0 for x in dimensions]
+        dimensions = [x * 0.5 for x in dimensions]
         new_ns = self.neighborhood_size*scale
         half_n = new_ns / 2
         obs_map = tf.pad(obs_map, [[half_n, half_n], [half_n, half_n]], "CONSTANT", constant_values=1.0)
