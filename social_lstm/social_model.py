@@ -379,9 +379,11 @@ class SocialModel():
         # Dimensions occupancy map (height, width)
         obs_map = tf.squeeze(tf.gather(self.obs_map, [self.map_index]))
         # obs_map = tf.squeeze(self.obs_map)
+        scale_factor = 10
         dimensions = obs_map.get_shape().as_list()
-        dimensions = [x * 0.5 for x in dimensions]
-        half_n = self.neighborhood_size / 2
+        dimensions = [x * scale_factor/2.0 for x in dimensions]
+        new_ns = self.neighborhood_size*scale_factor
+        half_n = new_ns / 2
         obs_map = tf.pad(obs_map, [[half_n, half_n], [half_n, half_n]], "CONSTANT", constant_values=1.0)
 
         def compute_grid_tensor():
@@ -398,8 +400,7 @@ class SocialModel():
 
             # ROI of the obstacle map centered at ped
             obs_map_ped = tf.slice(obs_map, global_position_ped,
-                                   [self.neighborhood_size, self.neighborhood_size])
-
+                                   [new_ns, new_ns])
             # Mask of the ROI occupancy map
             occ_mask = tf.where(tf.greater(obs_map_ped, tf.zeros_like(obs_map_ped)),
                                 tf.ones_like(obs_map_ped), tf.zeros_like(obs_map_ped))
@@ -407,25 +408,24 @@ class SocialModel():
             dist_map = tf.multiply(self.dist_map, occ_mask)
             # Pooling the ROI into the grid size
             tensor_obs_map_ped = tf.reshape(obs_map_ped,
-                                            [1, self.neighborhood_size, self.neighborhood_size, 1])
-            cell_size = self.neighborhood_size / self.grid_size
+                                            [1, new_ns, new_ns, 1])
+            cell_size = new_ns / self.grid_size
             pool_ratio = tf.nn.pool(input=tf.cast(tensor_obs_map_ped, tf.float32),
                                     window_shape=[cell_size, cell_size],
                                     strides=[cell_size, cell_size],
                                     padding='SAME',
                                     pooling_type="AVG")
-
             pool_ratio_grid = tf.reshape(pool_ratio, [self.grid_size * self.grid_size, 1])
             # Obtaining the closest obstacle for each cell
             tensor_dist_map = tf.reshape(dist_map,
-                                         [1, self.neighborhood_size, self.neighborhood_size, 1])
+                                         [1, new_ns, new_ns, 1])
             pool_dist = tf.nn.pool(input=tf.cast(tensor_dist_map, tf.float32),
                                    window_shape=[cell_size, cell_size],
                                    strides=[cell_size, cell_size],
                                    padding='SAME',
                                    pooling_type="MAX")
             pool_dist_grid = tf.reshape(pool_dist, [self.grid_size * self.grid_size, 1])
-            # with tf.name_scope("obstacle_embeddings"):
+            with tf.name_scope("obstacle_embeddings"):
                 # Embed the spatial input
             embedded_ratio = tf.nn.relu(tf.nn.xw_plus_b(tf.transpose(pool_ratio_grid), self.embedding_o_r_w, self.embedding_o_r_b))
             embedded_dist = tf.nn.relu(tf.nn.xw_plus_b(tf.transpose(pool_dist_grid), self.embedding_o_d_w, self.embedding_o_d_b))
