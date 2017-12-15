@@ -78,9 +78,13 @@ def main():
     # Save path
     parser.add_argument('--save_path', type=str, default="",
                         help='save_path')
-    # Save path
+    # Pipeline process
     parser.add_argument('--pipeline', type=bool, default=False,
-                        help='save_path')
+                        help='Pipeline activation')
+    # Scaling factor of Obstacle map
+    parser.add_argument('--scale', type=int, default=10,
+                        help='Scaling factor of Obstacle map')
+
     args = parser.parse_args()
     train(args)
 
@@ -96,7 +100,7 @@ def train(args):
     if not args.save_path:
         args.save_path = os.getcwd()
     if not args.pipeline:
-        args.dist_map = get_distMap(args.neighborhood_size)
+        args.dist_map = get_distMap(args.neighborhood_size*args.scale)
 
     # Create the SocialDataLoader object
     data_loader = SocialDataLoader(args.batch_size, args.seq_length, args.maxNumPeds, datasets, forcePreProcess=True, infer=False, valid_index=v_index)
@@ -302,9 +306,7 @@ def train(args):
         log_file_curve.close()
 
 
-def get_distMap(neighborhood_size):
-    # Neighborhood size
-    ns = neighborhood_size
+def get_distMap(ns):
     # Half Neighborhood size
     hns = ns / 2
     distMap = np.zeros([ns, ns], dtype=np.float)
