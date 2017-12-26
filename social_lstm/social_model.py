@@ -45,12 +45,25 @@ class SocialModel():
         # Distance metric map
         self.dist_map = args.dist_map
 
+        # Variable to hold the value of the learning rate
+        self.lr = tf.Variable(args.learning_rate, trainable=False, name="learning_rate")
+
+        # Output dimension of the model
+        self.output_size = 5
+
+        # Neighborhood size
+        self.neighborhood_size = args.neighborhood_size
+
+        # Embedding size
+        self.embedding_size = args.embedding_size
+
         # NOTE : For now assuming, batch_size is always 1. That is the input
         # to the model is always a sequence of frames
 
         # Construct the basicLSTMCell recurrent unit with a dimension given by args.rnn_size
         with tf.name_scope("LSTM_cell"):
-            cell = rnn_cell.BasicLSTMCell(args.rnn_size, state_is_tuple=False)
+            cell = rnn_cell.BasicLSTMCell(self.rnn_size, state_is_tuple=False)
+            ego_cell = rnn_cell.BasicLSTMCell(self.output_size, state_is_tuple=False)
             # if not infer and args.keep_prob < 1:
             # cell = rnn_cell.DropoutWrapper(cell, output_keep_prob=args.keep_prob)
 
@@ -72,18 +85,6 @@ class SocialModel():
         self.grid_data = tf.placeholder(tf.float32, [args.seq_length, args.maxNumPeds, args.maxNumPeds,
                                                      args.grid_size * args.grid_size], name="grid_data")
 
-        # Variable to hold the value of the learning rate
-        self.lr = tf.Variable(args.learning_rate, trainable=False, name="learning_rate")
-
-        # Output dimension of the model
-        self.output_size = 5
-
-        # Neighborhood size
-        self.neighborhood_size = args.neighborhood_size
-
-        # Embedding size
-        self.embedding_size = args.embedding_size
-
         # Define embedding and output layers
         self.define_embedding_and_output_layers()
 
@@ -91,6 +92,10 @@ class SocialModel():
         with tf.variable_scope("LSTM_states"):
             self.LSTM_states = tf.zeros([args.maxNumPeds, cell.state_size], name="LSTM_states")
             self.initial_states = tf.split(self.LSTM_states, args.maxNumPeds, 0)
+
+        # Define LSTM states for the robot
+        with tf.variable_scope("LSTM_ego_states"):
+            self.LSTM_ego_state = tf.zeros([1, ego_cell.state_size], name="LSTM_states")
 
         # Define hidden output states for each pedestrian
         with tf.variable_scope("Hidden_states"):
@@ -176,6 +181,10 @@ class SocialModel():
                 # Apply the linear layer. Output would be a tensor of shape 1 x output_size
                 with tf.name_scope("output_linear_layer"):
                     self.initial_output[ped] = tf.nn.xw_plus_b(self.output_states[ped], self.output_w, self.output_b)
+
+                if ped == 1:
+                    with tf.name_scope("output_ego_agent"):
+                        self.initial_output[ped], self.LSTM_ego_state = ego_cell(self.initial_output[ped], self.LSTM_ego_state)
 
                 # with tf.name_scope("store_distribution_parameters"):
                 #    # Store the distribution parameters for the current ped
