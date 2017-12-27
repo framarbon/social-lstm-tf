@@ -24,7 +24,7 @@ def getGridMask(frame, dimensions, neighborhood_size, grid_size):
 
     frame_mask = np.zeros((mnp, mnp, grid_size**2))
 
-    width_bound, height_bound = neighborhood_size/(width*1.0), neighborhood_size/(height*1.0)
+    width_bound, height_bound = 2*neighborhood_size/(width*1.0), 2*neighborhood_size/(height*1.0)
 
     # For each ped in the frame (existent and non-existent)
     for pedindex in range(mnp):
@@ -53,13 +53,16 @@ def getGridMask(frame, dimensions, neighborhood_size, grid_size):
 
             # Get x and y of the other ped
             other_x, other_y = frame[otherpedindex, 1], frame[otherpedindex, 2]
+            if pedindex == 1:
+                print "Coordinates "+str(otherpedindex)
+                print str(other_x-width_low)+" "+str(other_y-height_low)
             if other_x >= width_high or other_x < width_low or other_y >= height_high or other_y < height_low:
                 # Ped not in surrounding, so binary mask should be zero
                 continue
 
             # If in surrounding, calculate the grid cell
             cell_x = int(np.floor(((other_x - width_low)/width_bound) * grid_size))
-            cell_y = int(np.floor(((other_y - height_low)/height_bound) * grid_size))
+            cell_y = grid_size - int(np.floor(((other_y - height_low)/height_bound) * grid_size)) - 1
 
             # Other ped is in the corresponding grid cell of current ped
             frame_mask[pedindex, otherpedindex, cell_x + cell_y*grid_size] = 1
