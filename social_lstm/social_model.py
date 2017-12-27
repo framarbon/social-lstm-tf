@@ -220,9 +220,10 @@ class SocialModel():
 
         # Get all trainable variables
         tvars = tf.trainable_variables()
+        tvars_cost = [tvar for tvar in tf.trainable_variables() if "_b" not in tvar.name and "bias" not in tvar.name]
 
         # L2 loss
-        l2 = args.lambda_param * sum(tf.nn.l2_loss(tvar) for tvar in tvars)
+        l2 = args.lambda_param * sum(tf.nn.l2_loss(tvar) for tvar in tvars_cost)
         self.cost = self.cost + l2
         # tf.summary.scalar("Cost", self.cost)
         # Get the final LSTM states
