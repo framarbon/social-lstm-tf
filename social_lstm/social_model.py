@@ -33,7 +33,9 @@ class SocialModel():
         # Store rnn size and grid_size
         self.rnn_size = args.rnn_size
         self.grid_size = args.grid_size
+
         self.size_data_state = 7
+        self.predicted_var = (self.size_data_state-1)/2
 
         # Maximum number of peds
         self.maxNumPeds = args.maxNumPeds
@@ -77,7 +79,7 @@ class SocialModel():
         self.lr = tf.Variable(args.learning_rate, trainable=False, name="learning_rate")
 
         # Output dimension of the model
-        self.output_size = 5
+        self.output_size = 5*self.predicted_var
 
         # Neighborhood size
         self.neighborhood_size = args.neighborhood_size
@@ -146,7 +148,7 @@ class SocialModel():
 
                 with tf.name_scope("extract_input_ped"):
                     # Extract x and y positions of the current ped
-                    self.spatial_input = tf.slice(current_frame_data, [ped, 1], [1, 2])  # Tensor of shape (1,2)
+                    self.spatial_input = tf.slice(current_frame_data, [ped, 1], [1, 2*self.predicted_var])  # Tensor of shape (1,2)
                     # Extract the social tensor of the current ped
                     self.tensor_input = tf.slice(social_tensor, [ped, 0], [1,
                                                                            args.grid_size * args.grid_size * args.rnn_size])  # Tensor of shape (1, g*g*r)
@@ -184,8 +186,8 @@ class SocialModel():
 
                 with tf.name_scope("extract_target_ped"):
                     # Extract x and y coordinates of the target data
-                    # x_data and y_data would be tensors of shape 1 x 1
-                    [x_data, y_data] = tf.split(tf.slice(frame_target_data[seq], [ped, 1], [1, 2]), 2, 1)
+                    # x_data and y_data would be tensors of shape 1 x self.predicted_var
+                    [x_data, y_data] = tf.split(tf.slice(frame_target_data[seq], [ped, 1], [1, 2*self.predicted_var]), 2, 1)
                     target_pedID = frame_target_data[seq][ped, 0]
 
                 with tf.name_scope("get_coef"):
@@ -250,7 +252,7 @@ class SocialModel():
     def define_embedding_and_output_layers(self):
         # Define variables for the spatial coordinates embedding layer
         with tf.variable_scope("coordinate_embedding"):
-            self.embedding_w = tf.get_variable("embedding_w", [2, self.embedding_size],
+            self.embedding_w = tf.get_variable("embedding_w", [2*self.predicted_var, self.embedding_size],
                                                initializer=tf.truncated_normal_initializer(stddev=0.1))
             self.embedding_b = tf.get_variable("embedding_b", [self.embedding_size],
                                                initializer=tf.constant_initializer(0.1))
