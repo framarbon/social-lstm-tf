@@ -95,7 +95,7 @@ def train(args):
     if args.validDataset >= 0:
         datasets = [args.validDataset] + datasets
         v_index = 0
-    print "Datasetused for training: "+str(datasets)
+    print "Dataset used for training: "+str(datasets)
 
     if not args.save_path:
         args.save_path = os.getcwd()
