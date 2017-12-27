@@ -33,6 +33,7 @@ class SocialModel():
         # Store rnn size and grid_size
         self.rnn_size = args.rnn_size
         self.grid_size = args.grid_size
+        self.size_data_state = 9
 
         # Maximum number of peds
         self.maxNumPeds = args.maxNumPeds
@@ -63,7 +64,7 @@ class SocialModel():
         # Construct the basicLSTMCell recurrent unit with a dimension given by args.rnn_size
         with tf.name_scope("LSTM_cell"):
             cell = rnn_cell.BasicLSTMCell(self.rnn_size, state_is_tuple=False)
-            ego_cell = rnn_cell.BasicLSTMCell(self.output_size, state_is_tuple=False)
+            ego_cell = rnn_cell.BasicLSTMCell(self.rnn_size, state_is_tuple=False)
             # if not infer and args.keep_prob < 1:
             # cell = rnn_cell.DropoutWrapper(cell, output_keep_prob=args.keep_prob)
 
@@ -71,11 +72,11 @@ class SocialModel():
         # A sequence contains an ordered set of consecutive frames
         # Each frame can contain a maximum of 'args.maxNumPeds' number of peds
         # For each ped we have their (pedID, x, y) positions as input
-        self.input_data = tf.placeholder(tf.float32, [args.seq_length, args.maxNumPeds, 3], name="input_data")
+        self.input_data = tf.placeholder(tf.float32, [args.seq_length, args.maxNumPeds, self.size_data_state], name="input_data")
 
         # target data would be the same format as input_data except with
         # one time-step ahead
-        self.target_data = tf.placeholder(tf.float32, [args.seq_length, args.maxNumPeds, 3], name="target_data")
+        self.target_data = tf.placeholder(tf.float32, [args.seq_length, args.maxNumPeds, self.size_data_state], name="target_data")
 
         # index of the obstacle map
         self.map_index = tf.placeholder(tf.int32, [1], name="map_index")
@@ -178,13 +179,21 @@ class SocialModel():
                 #    self.output_states[ped] = tf.reshape(tf.concat(1, output), [-1, args.rnn_size])
                 #    print self.output_states[ped]
 
-                # Apply the linear layer. Output would be a tensor of shape 1 x output_size
-                with tf.name_scope("output_linear_layer"):
-                    self.initial_output[ped] = tf.nn.xw_plus_b(self.output_states[ped], self.output_w, self.output_b)
-
                 if ped == 1:
-                    with tf.name_scope("output_ego_agent"):
-                        self.initial_output[ped], self.LSTM_ego_state = ego_cell(self.initial_output[ped], self.LSTM_ego_state)
+                    with tf.name_scope("Ego_LSTM"):
+                        goal_input = tf.slice(current_frame_data, [ped, 7], [1, 2])  # Tensor of shape (1,2)
+                        goal_emb = tf.nn.xw_plus_b(goal_input, self.goal_w, self.goal_b)
+                        ego_input = tf.concat([self.output_states[ped], goal_emb], 1)
+                        # ego_output, self.LSTM_ego_state = ego_cell(ego_input, self.LSTM_ego_state)
+                        self.output_states[ped], self.LSTM_ego_state = ego_cell(ego_input, self.LSTM_ego_state)
+                        self.initial_output[ped] = tf.nn.xw_plus_b(self.output_states[ped], self.output_goal_w, self.output_goal_b)
+                else:
+                    # Apply the linear layer. Output would be a tensor of shape 1 x output_size
+                    with tf.name_scope("output_linear_layer"):
+                        self.initial_output[ped] = tf.nn.xw_plus_b(self.output_states[ped], self.output_w, self.output_b)
+
+                    # with tf.name_scope("Ego_output"):
+                    #     self.initial_output[ped] = tf.nn.xw_plus_b(ego_output, self.goal_w, self.goal_b)
 
                 # with tf.name_scope("store_distribution_parameters"):
                 #    # Store the distribution parameters for the current ped
@@ -264,6 +273,14 @@ class SocialModel():
             # tf.summary.histogram("weights", self.embedding_w)
             # tf.summary.histogram("biases", self.embedding_b)
 
+        with tf.variable_scope("Goal_embedding"):
+            self.goal_w = tf.get_variable("embedding_goal_w", [2, self.embedding_size],
+                                               initializer=tf.truncated_normal_initializer(stddev=0.1))
+            self.goal_b = tf.get_variable("embedding_goal_b", [self.embedding_size],
+                                               initializer=tf.constant_initializer(0.1))
+            # tf.summary.histogram("weights", self.embedding_w)
+            # tf.summary.histogram("biases", self.embedding_b)
+
         with tf.variable_scope("obstacle_embedding"):
             self.embedding_o_r_w = tf.get_variable("embedding_o_r_w", [self.grid_size**2, self.embedding_size/2],
                                                  initializer=tf.truncated_normal_initializer(stddev=0.1))
@@ -291,6 +308,11 @@ class SocialModel():
             self.output_b = tf.get_variable("output_b", [self.output_size], initializer=tf.constant_initializer(0.1))
             # tf.summary.histogram("weights", self.output_w)
             # tf.summary.histogram("biases", self.output_b)
+
+        with tf.variable_scope("Ego_output_layer"):
+            self.output_goal_w = tf.get_variable("output_goal_w", [self.rnn_size, self.output_size],
+                                            initializer=tf.truncated_normal_initializer(stddev=0.1))
+            self.output_goal_b = tf.get_variable("output_goal_b", [self.output_size], initializer=tf.constant_initializer(0.1))
 
     def tf_2d_normal(self, x, y, mux, muy, sx, sy, rho):
         '''
@@ -490,8 +512,8 @@ class SocialModel():
         # print "Fitting"
         # For each frame in the sequence
         for index, frame in enumerate(traj[:-1]):
-            data = np.reshape(frame, (1, self.maxNumPeds, 3))
-            target_data = np.reshape(traj[index + 1], (1, self.maxNumPeds, 3))
+            data = np.reshape(frame, (1, self.maxNumPeds, self.size_data_state))
+            target_data = np.reshape(traj[index + 1], (1, self.maxNumPeds, self.size_data_state))
             grid_data = np.reshape(grid[index, :],
                                    (1, self.maxNumPeds, self.maxNumPeds, self.grid_size * self.grid_size))
 
@@ -506,10 +528,10 @@ class SocialModel():
 
         last_frame = traj[-1]
 
-        prev_data = np.reshape(last_frame, (1, self.maxNumPeds, 3))
+        prev_data = np.reshape(last_frame, (1, self.maxNumPeds, self.size_data_state))
         prev_grid_data = np.reshape(grid[-1], (1, self.maxNumPeds, self.maxNumPeds, self.grid_size * self.grid_size))
 
-        prev_target_data = np.reshape(true_traj[traj.shape[0]], (1, self.maxNumPeds, 3))
+        prev_target_data = np.reshape(true_traj[traj.shape[0]], (1, self.maxNumPeds, self.size_data_state))
         # Prediction
         for t in range(num):
             # print "**** NEW PREDICTION TIME STEP", t, "****"
@@ -520,7 +542,7 @@ class SocialModel():
             # print "Cost", cost
             # Output is a list of lists where the inner lists contain matrices of shape 1x5. The outer list contains only one element (since seq_length=1) and the inner list contains maxNumPeds elements
             # output = output[0]
-            newpos = np.zeros((1, self.maxNumPeds, 3))
+            newpos = np.zeros((1, self.maxNumPeds, self.size_data_state))
             for pedindex, pedoutput in enumerate(output):
                 [o_mux, o_muy, o_sx, o_sy, o_corr] = np.split(pedoutput[0], 5, 0)
                 mux, muy, sx, sy, corr = o_mux[0], o_muy[0], np.exp(o_sx[0]), np.exp(o_sy[0]), np.tanh(o_corr[0])
@@ -539,7 +561,7 @@ class SocialModel():
             prev_data = newpos
             prev_grid_data = getSequenceGridMask(prev_data, dimensions, self.neighborhood_size, self.grid_size)
             if t != num - 1:
-                prev_target_data = np.reshape(true_traj[traj.shape[0] + t + 1], (1, self.maxNumPeds, 3))
+                prev_target_data = np.reshape(true_traj[traj.shape[0] + t + 1], (1, self.maxNumPeds, self.size_data_state))
 
         # The returned ret is of shape (obs_length+pred_length) x maxNumPeds x 3
         return ret
@@ -554,8 +576,8 @@ class SocialModel():
         # print "Fitting"
         # For each frame in the sequence
         for index, frame in enumerate(traj[:-1]):
-            data = np.reshape(frame, (1, self.maxNumPeds, 3))
-            target_data = np.reshape(traj[index + 1], (1, self.maxNumPeds, 3))
+            data = np.reshape(frame, (1, self.maxNumPeds, self.size_data_state))
+            target_data = np.reshape(traj[index + 1], (1, self.maxNumPeds, self.size_data_state))
             grid_data = np.reshape(grid[index, :],
                                    (1, self.maxNumPeds, self.maxNumPeds, self.grid_size * self.grid_size))
 
@@ -570,7 +592,7 @@ class SocialModel():
 
         last_frame = traj[-1]
 
-        prev_data = np.reshape(last_frame, (1, self.maxNumPeds, 3))
+        prev_data = np.reshape(last_frame, (1, self.maxNumPeds, self.size_data_state))
         prev_grid_data = np.reshape(grid[-1], (1, self.maxNumPeds, self.maxNumPeds, self.grid_size * self.grid_size))
 
         # Prediction

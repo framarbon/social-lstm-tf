@@ -33,6 +33,8 @@ class SocialDataLoader():
         self.used_data_dirs = [self.data_dirs[x] for x in datasets]
         self.infer = infer
 
+        self.size_data_state = 9
+
         # Number of datasets
         self.numDatasets = len(self.data_dirs)
 
@@ -124,9 +126,9 @@ class SocialDataLoader():
             # Initialize the list of numPeds for the current dataset
             numPeds_data.append([])
             # Initialize the numpy array for the current dataset
-            all_frame_data.append(np.zeros((numFrames - valid_numFrames, self.maxNumPeds, 3)))
+            all_frame_data.append(np.zeros((numFrames - valid_numFrames, self.maxNumPeds, self.size_data_state)))
             # Initialize the numpy array for the current dataset
-            valid_frame_data.append(np.zeros((valid_numFrames, self.maxNumPeds, 3)))
+            valid_frame_data.append(np.zeros((valid_numFrames, self.maxNumPeds, self.size_data_state)))
 
             # index to maintain the current frame
             curr_frame = 0
@@ -155,8 +157,20 @@ class SocialDataLoader():
                     current_x = pedsInFrame[3, pedsInFrame[1, :] == ped][0]
                     current_y = pedsInFrame[2, pedsInFrame[1, :] == ped][0]
 
+                    # Extract their x and y velocities
+                    vel_x = pedsInFrame[4, pedsInFrame[1, :] == ped][0]
+                    vel_y = pedsInFrame[5, pedsInFrame[1, :] == ped][0]
+
+                    # Extract their w and z angle component
+                    angle_w = pedsInFrame[6, pedsInFrame[1, :] == ped][0]
+                    angle_z = pedsInFrame[7, pedsInFrame[1, :] == ped][0]
+
+                    # Extract their x and y goal
+                    goal_x = pedsInFrame[8, pedsInFrame[1, :] == ped][0]
+                    goal_y = pedsInFrame[9, pedsInFrame[1, :] == ped][0]
+
                     # Add their pedID, x, y to the row of the numpy array
-                    pedsWithPos.append([ped, current_x, current_y])
+                    pedsWithPos.append([ped, current_x, current_y, vel_x, vel_y, angle_w, angle_z, goal_x, goal_y])
                 #     TODO workaround remove elements outside maxnumped
 
                 #TODO sort by distance and clip to MaxnumPed
@@ -247,8 +261,8 @@ class SocialDataLoader():
                     pedID_list = np.unique(seq_frame_data[:, :, 0])
                     numUniquePeds = pedID_list.shape[0]
 
-                    sourceData = np.zeros((self.seq_length, self.maxNumPeds, 3))
-                    targetData = np.zeros((self.seq_length, self.maxNumPeds, 3))
+                    sourceData = np.zeros((self.seq_length, self.maxNumPeds, self.size_data_state))
+                    targetData = np.zeros((self.seq_length, self.maxNumPeds, self.size_data_state))
 
                     for seq in range(self.seq_length):
                         sseq_frame_data = seq_source_frame_data[seq, :]
@@ -307,8 +321,8 @@ class SocialDataLoader():
                 pedID_list = np.unique(seq_frame_data[:, :, 0])
                 numUniquePeds = pedID_list.shape[0]
 
-                sourceData = np.zeros((self.seq_length, self.maxNumPeds, 3))
-                targetData = np.zeros((self.seq_length, self.maxNumPeds, 3))
+                sourceData = np.zeros((self.seq_length, self.maxNumPeds, self.size_data_state))
+                targetData = np.zeros((self.seq_length, self.maxNumPeds, self.size_data_state))
 
                 for seq in range(self.seq_length):
                     sseq_frame_data = seq_source_frame_data[seq, :]
@@ -371,8 +385,8 @@ class SocialDataLoader():
                 pedID_list = np.unique(seq_frame_data[:, :, 0])
                 numUniquePeds = pedID_list.shape[0]
 
-                sourceData = np.zeros((self.seq_length, self.maxNumPeds, 3))
-                targetData = np.zeros((self.seq_length, self.maxNumPeds, 3))
+                sourceData = np.zeros((self.seq_length, self.maxNumPeds, self.size_data_state))
+                targetData = np.zeros((self.seq_length, self.maxNumPeds, self.size_data_state))
 
                 for seq in range(self.seq_length):
                     sseq_frame_data = seq_source_frame_data[seq, :]
