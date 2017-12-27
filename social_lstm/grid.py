@@ -53,9 +53,6 @@ def getGridMask(frame, dimensions, neighborhood_size, grid_size):
 
             # Get x and y of the other ped
             other_x, other_y = frame[otherpedindex, 1], frame[otherpedindex, 2]
-            if pedindex == 1:
-                print "Coordinates "+str(otherpedindex)
-                print str(other_x-width_low)+" "+str(other_y-height_low)
             if other_x >= width_high or other_x < width_low or other_y >= height_high or other_y < height_low:
                 # Ped not in surrounding, so binary mask should be zero
                 continue
