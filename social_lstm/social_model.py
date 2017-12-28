@@ -131,6 +131,21 @@ class SocialModel():
         with tf.name_scope("Non_existent_ped_stuff"):
             nonexistent_ped = tf.constant(0.0, name="zero_ped")
 
+        # Tensor to represent ego ped
+        with tf.name_scope("Non_existent_ped_stuff"):
+            ego_ped = tf.constant(1.0, name="ego_ped")
+
+        def goal_output():
+            with tf.variable_scope("ego_LSTM"):
+                if seq > 0 or ped > 0:
+                    scope.reuse_variables()
+                output, LSTM_ego_state = ego_cell(initial_output, self.LSTM_ego_state)
+            return output, LSTM_ego_state
+
+        def no_goal():
+            return initial_output, self.LSTM_ego_state
+
+
         # Iterate over each frame in the sequence
         for seq, frame in enumerate(frame_data):
             print "Frame number", seq
@@ -180,11 +195,8 @@ class SocialModel():
 
                 # Apply the linear layer. Output would be a tensor of shape 1 x output_size
                 with tf.name_scope("output_linear_layer"):
-                    self.initial_output[ped] = tf.nn.xw_plus_b(self.output_states[ped], self.output_w, self.output_b)
-
-                if ped == 1:
-                    with tf.name_scope("output_ego_agent"):
-                        self.initial_output[ped], self.LSTM_ego_state = ego_cell(self.initial_output[ped], self.LSTM_ego_state)
+                    initial_output = tf.nn.xw_plus_b(self.output_states[ped], self.output_w, self.output_b)
+                    self.initial_output[ped], self.LSTM_ego_state = tf.cond(tf.equal(pedID,ego_ped), lambda: goal_output(), lambda: no_goal())
 
                 # with tf.name_scope("store_distribution_parameters"):
                 #    # Store the distribution parameters for the current ped
@@ -454,7 +466,7 @@ class SocialModel():
             # Compute social tensor for the current pedestrian
             with tf.name_scope("tensor_calculation"):
                 pedID = current_frame_data[ped, 0]
-                social_tensor[ped] = tf.cond(tf.equal(tf.cast(pedID, tf.int32), tf.constant(0, tf.int32)), lambda: do_nothing(), lambda: compute_grid_tensor())
+                social_tensor[ped] = tf.cond(tf.equal(pedID, tf.constant(0.0)), lambda: do_nothing(), lambda: compute_grid_tensor())
 
         # Concatenate the social tensor from a list to a tensor of shape MNP x (GS**2) x RNN_size
         social_tensor = tf.concat(social_tensor, 0)
