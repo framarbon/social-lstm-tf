@@ -343,7 +343,7 @@ class SocialModel():
         result1 = -tf.log(tf.maximum(result0, epsilon))  # Numerical stability
 
         # Sum up all log probabilities for each data point
-        return tf.reduce_sum(result1)
+        return tf.reduce_mean(result1)
 
     def get_coef(self, output):
         # eq 20 -> 22 of Graves (2013)
