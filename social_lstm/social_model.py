@@ -132,6 +132,30 @@ class SocialModel():
         with tf.name_scope("Non_existent_ped_stuff"):
             nonexistent_ped = tf.constant(0.0, name="zero_ped")
 
+        # Tensor to represent ego ped
+        with tf.name_scope("Ego_ped_stuff"):
+            egoped = tf.constant(1.0, name="ego_ped")
+
+        def goal_linear_output():
+            with tf.name_scope("goal_embedding"):
+                goal_input = tf.slice(current_frame_data, [ped, 7], [1, 2])  # Tensor of shape (1,2)
+                goal_emb = tf.nn.xw_plus_b(goal_input, self.goal_w, self.goal_b)
+                ego_input = tf.concat([self.output_states[ped], goal_emb], 1)
+                # ego_output, self.LSTM_ego_state = ego_cell(ego_input, self.LSTM_ego_state)
+            with tf.variable_scope("ego_LSTM") as scope:
+                if seq > 0 or ped > 0:
+                    scope.reuse_variables()
+                output_states, LSTM_ego_state = ego_cell(ego_input, self.LSTM_ego_state)
+            with tf.name_scope("goal_output"):
+                initial_output = tf.nn.xw_plus_b(output_states, self.output_goal_w, self.output_goal_b)
+            return initial_output, output_states, LSTM_ego_state
+
+        def linear_output():
+            with tf.name_scope("output_linear_layer"):
+                initial_output = tf.nn.xw_plus_b(self.output_states[ped], self.output_w, self.output_b)
+            return initial_output, self.output_states[ped], self.LSTM_ego_state
+
+
         # Iterate over each frame in the sequence
         for seq, frame in enumerate(frame_data):
             print "Frame number", seq
@@ -174,26 +198,7 @@ class SocialModel():
                         scope.reuse_variables()
                     self.output_states[ped], self.initial_states[ped] = cell(complete_input, self.initial_states[ped])
 
-                # with tf.name_scope("reshape_output"):
-                # Store the output hidden state for the current pedestrian
-                #    self.output_states[ped] = tf.reshape(tf.concat(1, output), [-1, args.rnn_size])
-                #    print self.output_states[ped]
-
-                if ped == 1:
-                    with tf.name_scope("Ego_LSTM"):
-                        goal_input = tf.slice(current_frame_data, [ped, 7], [1, 2])  # Tensor of shape (1,2)
-                        goal_emb = tf.nn.xw_plus_b(goal_input, self.goal_w, self.goal_b)
-                        ego_input = tf.concat([self.output_states[ped], goal_emb], 1)
-                        # ego_output, self.LSTM_ego_state = ego_cell(ego_input, self.LSTM_ego_state)
-                        self.output_states[ped], self.LSTM_ego_state = ego_cell(ego_input, self.LSTM_ego_state)
-                        self.initial_output[ped] = tf.nn.xw_plus_b(self.output_states[ped], self.output_goal_w, self.output_goal_b)
-                else:
-                    # Apply the linear layer. Output would be a tensor of shape 1 x output_size
-                    with tf.name_scope("output_linear_layer"):
-                        self.initial_output[ped] = tf.nn.xw_plus_b(self.output_states[ped], self.output_w, self.output_b)
-
-                    # with tf.name_scope("Ego_output"):
-                    #     self.initial_output[ped] = tf.nn.xw_plus_b(ego_output, self.goal_w, self.goal_b)
+                self.initial_output[ped], self.output_states[ped], self.LSTM_ego_state = tf.cond(tf.equal(pedID, egoped), lambda: goal_linear_output(), lambda: linear_output())
 
                 # with tf.name_scope("store_distribution_parameters"):
                 #    # Store the distribution parameters for the current ped
