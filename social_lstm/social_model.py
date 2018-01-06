@@ -119,6 +119,7 @@ class SocialModel():
             self.cost = tf.constant(0.0, name="cost")
             self.counter = tf.constant(0.0, name="counter")
             self.increment = tf.constant(1.0, name="increment")
+            self.loss = tf.constant(0.0, name="loglikelihood")
 
         # Containers to store output distribution parameters
         with tf.name_scope("Distribution_parameters_stuff"):
@@ -203,7 +204,7 @@ class SocialModel():
 
                 with tf.name_scope("calculate_loss"):
                     # Calculate loss for the current ped
-                    lossfunc = self.get_lossfunc(o_mux, o_muy, o_sx, o_sy, o_corr, x_data, y_data)
+                    losspos, lossfunc = self.get_lossfunc(o_mux, o_muy, o_sx, o_sy, o_corr, x_data, y_data)
                     # tf.summary.scalar("loss", lossfunc)
 
                 with tf.name_scope("increment_cost"):
@@ -212,6 +213,9 @@ class SocialModel():
                     self.cost = tf.where(
                         tf.logical_or(tf.equal(pedID, nonexistent_ped), tf.equal(target_pedID, nonexistent_ped)),
                         self.cost, tf.add(self.cost, lossfunc))
+                    self.loss = tf.where(
+                        tf.logical_or(tf.equal(pedID, nonexistent_ped), tf.equal(target_pedID, nonexistent_ped)),
+                        self.loss, tf.add(self.loss, losspos))
                     self.counter = tf.where(
                         tf.logical_or(tf.equal(pedID, nonexistent_ped), tf.equal(target_pedID, nonexistent_ped)),
                         self.counter, tf.add(self.counter, self.increment))
@@ -219,6 +223,7 @@ class SocialModel():
         with tf.name_scope("mean_cost"):
             # Mean of the cost
             self.cost = tf.div(self.cost, self.counter)
+            self.loss = tf.div(self.loss, self.counter)
 
         # Get all trainable variables
         tvars = tf.trainable_variables()
@@ -343,7 +348,7 @@ class SocialModel():
         result1 = -tf.log(tf.maximum(result0, epsilon))  # Numerical stability
 
         # Sum up all log probabilities for each data point
-        return tf.reduce_mean(result1)
+        return tf.squeeze(result1)[0], tf.reduce_sum(result1)
 
     def get_coef(self, output):
         # eq 20 -> 22 of Graves (2013)

@@ -16,7 +16,7 @@ import random
 # sequence.
 class SocialDataLoader():
 
-    def __init__(self, batch_size=50, seq_length=5, maxNumPeds=40, datasets=[2, 3, 4], forcePreProcess=False, infer=False, valid_index=-1):
+    def __init__(self, batch_size=50, seq_length=5, maxNumPeds=40, datasets=[2, 3, 4], forcePreProcess=False, infer=False, valid_index=[2,3]):
         '''
         Initialiser function for the SocialDataLoader class
         params:
@@ -25,9 +25,12 @@ class SocialDataLoader():
         forcePreProcess : Flag to forcefully preprocess the data again from csv files
         '''
         # List of data directories where raw data resides
-        self.data_dirs = ['../data/eth/univ', '../data/eth/hotel',
-                          '../data/ucy/zara/zara01', '../data/ucy/zara/zara02',
-                          '../data/ucy/univ', '../data/own/1', '../data/own/training', '../data/own/validation']
+        # self.data_dirs = ['../data/eth/univ', '../data/eth/hotel',
+        #                   '../data/ucy/zara/zara01', '../data/ucy/zara/zara02',
+        #                   '../data/ucy/univ', '../data/own/1', '../data/own/training', '../data/own/validation']
+        self.data_dirs = ['../data/data/1', '../data/data/2',
+                          '../data/data/3', '../data/data/4',
+                          '../data/data/valid1', '../data/data/valid2']
         # self.data_dirs = ['./data/eth/univ', './data/eth/hotel']
 
         self.used_data_dirs = [self.data_dirs[x] for x in datasets]
@@ -117,9 +120,9 @@ class SocialDataLoader():
             numFrames = len(frameList)
 
             valid_numFrames = 0
-            if self.val_dataset == -1 and self.infer == False:
+            if -1 in self.val_dataset and self.infer == False:
                 valid_numFrames = int(numFrames * self.val_fraction)
-            elif dataset_index == self.val_dataset:
+            elif dataset_index in self.val_dataset:
                 valid_numFrames = int(numFrames)
 
 
@@ -169,7 +172,7 @@ class SocialDataLoader():
 
                 #TODO sort by distance and clip to MaxnumPed
                 # save norm to the robot? and sort it using zip
-                if (ind >= valid_numFrames and self.val_dataset == -1) or self.infer or (self.val_dataset != dataset_index):
+                if (ind >= valid_numFrames and -1 in self.val_dataset) or self.infer or (dataset_index not in self.val_dataset):
                     # Add the details of all the peds in the current frame to all_frame_data
                     all_frame_data[dataset_index][ind - valid_numFrames, 0:len(pedsList), :] = np.array(pedsWithPos)
                 else:
