@@ -35,6 +35,9 @@ class SocialModel():
         self.grid_size = args.grid_size
         self.size_data_state = 9
 
+        self.size_data_state = 3
+        self.predicted_var = (self.size_data_state-1)/2
+
         # Maximum number of peds
         self.maxNumPeds = args.maxNumPeds
 
@@ -50,7 +53,7 @@ class SocialModel():
         self.lr = tf.Variable(args.learning_rate, trainable=False, name="learning_rate")
 
         # Output dimension of the model
-        self.output_size = 5
+        self.output_size = 5*self.predicted_var
 
         # Neighborhood size
         self.neighborhood_size = args.neighborhood_size
@@ -122,6 +125,7 @@ class SocialModel():
             self.cost = tf.constant(0.0, name="cost")
             self.counter = tf.constant(0.0, name="counter")
             self.increment = tf.constant(1.0, name="increment")
+            self.loss = tf.constant(0.0, name="loglikelihood")
 
         # Containers to store output distribution parameters
         with tf.name_scope("Distribution_parameters_stuff"):
@@ -175,7 +179,7 @@ class SocialModel():
 
                 with tf.name_scope("extract_input_ped"):
                     # Extract x and y positions of the current ped
-                    self.spatial_input = tf.slice(current_frame_data, [ped, 1], [1, 2])  # Tensor of shape (1,2)
+                    self.spatial_input = tf.slice(current_frame_data, [ped, 1], [1, 2*self.predicted_var])  # Tensor of shape (1,2)
                     # Extract the social tensor of the current ped
                     self.tensor_input = tf.slice(social_tensor, [ped, 0], [1,
                                                                            args.grid_size * args.grid_size * args.rnn_size])  # Tensor of shape (1, g*g*r)
@@ -206,8 +210,8 @@ class SocialModel():
 
                 with tf.name_scope("extract_target_ped"):
                     # Extract x and y coordinates of the target data
-                    # x_data and y_data would be tensors of shape 1 x 1
-                    [x_data, y_data] = tf.split(tf.slice(frame_target_data[seq], [ped, 1], [1, 2]), 2, 1)
+                    # x_data and y_data would be tensors of shape 1 x self.predicted_var
+                    [x_data, y_data] = tf.split(tf.slice(frame_target_data[seq], [ped, 1], [1, 2*self.predicted_var]), 2, 1)
                     target_pedID = frame_target_data[seq][ped, 0]
 
                 with tf.name_scope("get_coef"):
@@ -223,7 +227,7 @@ class SocialModel():
 
                 with tf.name_scope("calculate_loss"):
                     # Calculate loss for the current ped
-                    lossfunc = self.get_lossfunc(o_mux, o_muy, o_sx, o_sy, o_corr, x_data, y_data)
+                    losspos, lossfunc = self.get_lossfunc(o_mux, o_muy, o_sx, o_sy, o_corr, x_data, y_data)
                     # tf.summary.scalar("loss", lossfunc)
 
                 with tf.name_scope("increment_cost"):
@@ -232,6 +236,9 @@ class SocialModel():
                     self.cost = tf.where(
                         tf.logical_or(tf.equal(pedID, nonexistent_ped), tf.equal(target_pedID, nonexistent_ped)),
                         self.cost, tf.add(self.cost, lossfunc))
+                    self.loss = tf.where(
+                        tf.logical_or(tf.equal(pedID, nonexistent_ped), tf.equal(target_pedID, nonexistent_ped)),
+                        self.loss, tf.add(self.loss, losspos))
                     self.counter = tf.where(
                         tf.logical_or(tf.equal(pedID, nonexistent_ped), tf.equal(target_pedID, nonexistent_ped)),
                         self.counter, tf.add(self.counter, self.increment))
@@ -239,6 +246,7 @@ class SocialModel():
         with tf.name_scope("mean_cost"):
             # Mean of the cost
             self.cost = tf.div(self.cost, self.counter)
+            self.loss = tf.div(self.loss, self.counter)
 
         # Get all trainable variables
         tvars = tf.trainable_variables()
@@ -272,7 +280,7 @@ class SocialModel():
     def define_embedding_and_output_layers(self):
         # Define variables for the spatial coordinates embedding layer
         with tf.variable_scope("coordinate_embedding"):
-            self.embedding_w = tf.get_variable("embedding_w", [2, self.embedding_size],
+            self.embedding_w = tf.get_variable("embedding_w", [2*self.predicted_var, self.embedding_size],
                                                initializer=tf.truncated_normal_initializer(stddev=0.1))
             self.embedding_b = tf.get_variable("embedding_b", [self.embedding_size],
                                                initializer=tf.constant_initializer(0.1))
@@ -376,7 +384,7 @@ class SocialModel():
         result1 = -tf.log(tf.maximum(result0, epsilon))  # Numerical stability
 
         # Sum up all log probabilities for each data point
-        return tf.reduce_sum(result1)
+        return tf.squeeze(result1), tf.reduce_sum(result1)
 
     def get_coef(self, output):
         # eq 20 -> 22 of Graves (2013)
@@ -610,7 +618,7 @@ class SocialModel():
             # print "Cost", cost
             # Output is a list of lists where the inner lists contain matrices of shape 1x5. The outer list contains only one element (since seq_length=1) and the inner list contains maxNumPeds elements
             # output = output[0]
-            newpos = np.zeros((1, self.maxNumPeds, 3))
+            newpos = np.zeros((1, self.maxNumPeds, self.size_data_state))
             for pedindex, pedoutput in enumerate(output):
                 [o_mux, o_muy, o_sx, o_sy, o_corr] = np.split(pedoutput[0], 5, 0)
                 mux, muy, sx, sy, corr = o_mux[0], o_muy[0], np.exp(o_sx[0]), np.exp(o_sy[0]), np.tanh(o_corr[0])
