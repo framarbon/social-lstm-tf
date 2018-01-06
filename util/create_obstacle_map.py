@@ -43,7 +43,8 @@ def main():
     # data_dirs = ['../data/eth/univ', '../data/eth/hotel',
     #              '../data/ucy/zara/zara01', '../data/ucy/zara/zara02',
     #              '../data/ucy/univ']
-    data_dirs = ['../data/own/1', '../data/own/training', '../data/own/validation']
+    # data_dirs = ['../data/own/1', '../data/own/training', '../data/own/validation']
+    data_dirs = ['../data/data/1', '../data/data/2', '../data/data/3', '../data/data/4', '../data/data/valid1', '../data/data/valid2']
 
     for x in data_dirs:
         image_file = x + '/annotated.png'
