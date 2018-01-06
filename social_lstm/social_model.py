@@ -35,7 +35,6 @@ class SocialModel():
         self.grid_size = args.grid_size
         self.size_data_state = 9
 
-        self.size_data_state = 3
         self.predicted_var = (self.size_data_state-1)/2
 
         # Maximum number of peds
@@ -382,9 +381,10 @@ class SocialModel():
 
         # Apply the log operation
         result1 = -tf.log(tf.maximum(result0, epsilon))  # Numerical stability
+        result1 = tf.reduce_sum(result1)
 
         # Sum up all log probabilities for each data point
-        return tf.squeeze(result1), tf.reduce_sum(result1)
+        return tf.squeeze(result1), result1
 
     def get_coef(self, output):
         # eq 20 -> 22 of Graves (2013)
