@@ -220,7 +220,7 @@ def train(args):
             # Validation
             data_loader.reset_batch_pointer(valid=True)
             loss_epoch = 0
-            loss_epoch_pos = []
+            loss_epoch_pos = [0, 0]
             # writer.add_graph(sess.graph)
 
             for b in range(data_loader.valid_num_batches):
@@ -284,7 +284,7 @@ def train(args):
                 best_val_loss = loss_epoch_pos
                 best_epoch = e
 
-            print('(epoch {}), Epoch validation loss = {:.3f} | {:.3f}'.format(e, loss_epoch, loss_epoch_pos))
+            print('(epoch {}), Epoch validation loss = {:.3f} | {:.3f} {:.3f}'.format(e, loss_epoch, loss_epoch_pos[0], loss_epoch_pos[1]))
             print 'Best epoch', best_epoch, 'Best validation loss', best_val_loss
             log_file_curve.write(str(loss_epoch)+',')
             log_file_curve.write(','.join(map(str, loss_epoch_pos)) + '\n')
