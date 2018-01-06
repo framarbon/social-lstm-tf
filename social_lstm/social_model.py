@@ -331,7 +331,7 @@ class SocialModel():
 	result1 = tf.reduce_sum(result1)
 	
         # Sum up all log probabilities for each data point
-        return tf.squeeze(result1) result1
+        return tf.squeeze(result1), result1
 
     def get_coef(self, output):
         # eq 20 -> 22 of Graves (2013)
