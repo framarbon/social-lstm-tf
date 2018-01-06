@@ -289,7 +289,7 @@ def train(args):
                         loss_batch, loss_batch_pos, end - start))
 
             loss_epoch /= data_loader.valid_num_batches
-            loss_epoch_pos /= data_loader.valid_num_batches
+            loss_epoch_pos = [x / data_loader.valid_num_batches for x in loss_epoch_pos]
             # test_cost = tf.Summary(value=[tf.Summary.Value(tag="TestCost", simple_value=loss_epoch)])
             # writer.add_summary(test_cost, e * data_loader.num_batches + b)
 
