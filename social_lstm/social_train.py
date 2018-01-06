@@ -225,7 +225,7 @@ def train(args):
             # Validation
             data_loader.reset_batch_pointer(valid=True)
             loss_epoch = 0
-            loss_epoch_pos = 0
+            loss_epoch_pos = []
             # writer.add_graph(sess.graph)
 
             for b in range(data_loader.valid_num_batches):
@@ -260,14 +260,14 @@ def train(args):
                     feed = {model.input_data: x_batch, model.target_data: y_batch,
                             model.grid_data: grid_batch}
 
-                    train_loss = sess.run(model.cost, feed)
+                    pos_loss, train_loss = sess.run([model.loss, model.cost], feed)
                     loss_batch += train_loss
                     loss_batch_pos += pos_loss
 
                 loss_batch = loss_batch / data_loader.batch_size
                 loss_batch_pos = loss_batch_pos / data_loader.batch_size
                 loss_epoch += loss_batch
-                loss_epoch_pos += loss_batch_pos
+                loss_epoch_pos[v_index.index(d_batch)] += loss_batch_pos
 
                 # test_cost = tf.Summary(value=[tf.Summary.Value(tag="TestCost", simple_value=loss_batch)])
                 # writer.add_summary(test_cost, e * data_loader.num_batches + b)
@@ -291,8 +291,8 @@ def train(args):
 
             print('(epoch {}), Epoch validation loss = {:.3f} | {:.3f}'.format(e, loss_epoch, loss_epoch_pos))
             print 'Best epoch', best_epoch, 'Best validation loss', best_val_loss
-            log_file_curve.write(str(loss_epoch)+'\n')
-            log_file_curve.write(str(loss_epoch_pos)+'\n')
+            log_file_curve.write(str(loss_epoch)+',')
+            log_file_curve.write(','.join(map(str, loss_epoch_pos)) + '\n')
 
             print '*****************'
 
