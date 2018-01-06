@@ -268,7 +268,7 @@ class SocialModel():
 
         # Define variables for the output linear layer
         with tf.variable_scope("output_layer"):
-            self.output_w = tf.get_variable("output_w", [args.rnn_size, self.output_size],
+            self.output_w = tf.get_variable("output_w", [self.rnn_size, self.output_size],
                                             initializer=tf.truncated_normal_initializer(stddev=0.1))
             self.output_b = tf.get_variable("output_b", [self.output_size], initializer=tf.constant_initializer(0.1))
             # tf.summary.histogram("weights", self.output_w)
