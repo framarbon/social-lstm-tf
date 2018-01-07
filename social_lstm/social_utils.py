@@ -359,7 +359,7 @@ class SocialDataLoader():
 
         return x_batch, y_batch, d
 
-    def next_valid_batch(self, randomUpdate=True):
+    def next_valid_batch(self, randomUpdate=False):
         '''
         Function to get the next batch of points
         '''
