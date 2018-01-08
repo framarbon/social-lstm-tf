@@ -285,10 +285,10 @@ def train(args):
 
             # Update best validation loss until now
             if loss_epoch_pos[0] < best_val_loss1:
-                best_val_loss1 = loss_epoch_pos
+                best_val_loss1 = loss_epoch_pos[0]
                 best_epoch1 = e
             if loss_epoch_pos[1] < best_val_loss2:
-                best_val_loss2 = loss_epoch_pos
+                best_val_loss2 = loss_epoch_pos[1]
                 best_epoch2 = e
 
             print('(epoch {}), Epoch validation loss = {:.3f} | {:.3f} {:.3f}, counter = {:.0f} | {:.0f}'
