@@ -340,6 +340,7 @@ class SocialModel():
 
         # Calculate the PDF of the data w.r.t to the distribution
         result0 = self.tf_2d_normal(x_data, y_data, z_mux, z_muy, z_sx, z_sy, z_corr)
+        result0 = tf.slice(result0,[0,0],[1,1])
 
         # For numerical stability purposes
         epsilon = 1e-20
@@ -348,7 +349,7 @@ class SocialModel():
         result1 = -tf.log(tf.maximum(result0, epsilon))  # Numerical stability
 
         # Sum up all log probabilities for each data point
-        return tf.squeeze(result1)[0], tf.reduce_sum(result1)
+        return tf.squeeze(result1), tf.squeeze(result1)
 
     def get_coef(self, output):
         # eq 20 -> 22 of Graves (2013)
