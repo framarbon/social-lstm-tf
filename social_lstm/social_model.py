@@ -34,8 +34,8 @@ class SocialModel():
         self.rnn_size = args.rnn_size
         self.grid_size = args.grid_size
 
-        self.size_data_state = 3
-        self.predicted_var = (self.size_data_state-1)/2
+        self.size_data_state = 9
+        self.predicted_var = 1
 
         # Maximum number of peds
         self.maxNumPeds = args.maxNumPeds
@@ -98,7 +98,7 @@ class SocialModel():
 
         # Define LSTM states for the robot
         with tf.variable_scope("LSTM_ego_states"):
-            self.LSTM_ego_state = tf.zeros([1, ego_cell.state_size], name="LSTM_states")
+            self.LSTM_ego_state = tf.zeros([1, self.output_size], name="LSTM_states")
 
         # Define hidden output states for each pedestrian
         with tf.variable_scope("Hidden_states"):
@@ -141,10 +141,12 @@ class SocialModel():
 
         def goal_output():
             goal_input = tf.slice(current_frame_data, [ped, 7], [1, 2])  # Tensor of shape (1,2)
+            with tf.name_scope("goal_embedding_operator"):
+                tensor_input = tf.nn.relu(tf.nn.xw_plus_b(goal_input, self.embedding_g_w, self.embedding_g_b))
             with tf.variable_scope("ego_LSTM"):
                 if seq > 0 or ped > 0:
                     scope.reuse_variables()
-                output, LSTM_ego_state = ego_cell(tf.concat([initial_output, goal_input], 1), self.LSTM_ego_state)
+                output, LSTM_ego_state = ego_cell(tensor_input, tf.concat([self.LSTM_ego_state, initial_output],1))
             return output, LSTM_ego_state
 
         def no_goal():
@@ -283,8 +285,12 @@ class SocialModel():
                                                initializer=tf.truncated_normal_initializer(stddev=0.1))
             self.embedding_b = tf.get_variable("embedding_b", [self.embedding_size],
                                                initializer=tf.constant_initializer(0.1))
-            # tf.summary.histogram("weights", self.embedding_w)
-            # tf.summary.histogram("biases", self.embedding_b)
+
+        with tf.variable_scope("goal_embedding"):
+            self.embedding_g_w = tf.get_variable("embedding_w", [2, self.embedding_size],
+                                               initializer=tf.truncated_normal_initializer(stddev=0.1))
+            self.embedding_g_b = tf.get_variable("embedding_b", [self.embedding_size],
+                                               initializer=tf.constant_initializer(0.1))
 
         with tf.variable_scope("obstacle_embedding"):
             self.embedding_o_r_w = tf.get_variable("embedding_o_r_w", [self.grid_size**2, self.embedding_size/2],
