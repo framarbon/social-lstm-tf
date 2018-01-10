@@ -96,10 +96,6 @@ class SocialModel():
             self.LSTM_states = tf.zeros([args.maxNumPeds, cell.state_size], name="LSTM_states")
             self.initial_states = tf.split(self.LSTM_states, args.maxNumPeds, 0)
 
-        # Define LSTM states for the robot
-        with tf.variable_scope("LSTM_ego_states"):
-            self.LSTM_ego_state = tf.zeros([1, ego_cell.state_size], name="LSTM_states")
-
         # Define hidden output states for each pedestrian
         with tf.variable_scope("Hidden_states"):
             # self.output_states = tf.zeros([args.maxNumPeds, cell.output_size], name="hidden_states")
@@ -143,20 +139,18 @@ class SocialModel():
             with tf.name_scope("goal_embedding"):
                 goal_input = tf.slice(current_frame_data, [ped, 7], [1, 2])  # Tensor of shape (1,2)
                 goal_emb = tf.nn.xw_plus_b(goal_input, self.goal_w, self.goal_b)
-                ego_input = tf.concat([self.output_states[ped], goal_emb], 1)
-                # ego_output, self.LSTM_ego_state = ego_cell(ego_input, self.LSTM_ego_state)
             with tf.variable_scope("ego_LSTM") as scope:
                 if seq > 0 or ped > 0:
                     scope.reuse_variables()
-                output_states, LSTM_ego_state = ego_cell(ego_input, self.LSTM_ego_state)
+                output_states, LSTM_state = ego_cell(goal_emb, self.initial_states[ped])
             with tf.name_scope("goal_output"):
                 initial_output = tf.nn.xw_plus_b(output_states, self.output_goal_w, self.output_goal_b)
-            return initial_output, output_states, LSTM_ego_state
+            return initial_output, output_states, LSTM_state
 
         def linear_output():
             with tf.name_scope("output_linear_layer"):
                 initial_output = tf.nn.xw_plus_b(self.output_states[ped], self.output_w, self.output_b)
-            return initial_output, self.output_states[ped], self.LSTM_ego_state
+            return initial_output, self.output_states[ped], self.initial_states[ped]
 
 
         # Iterate over each frame in the sequence
@@ -201,7 +195,7 @@ class SocialModel():
                         scope.reuse_variables()
                     self.output_states[ped], self.initial_states[ped] = cell(complete_input, self.initial_states[ped])
 
-                self.initial_output[ped], self.output_states[ped], self.LSTM_ego_state = tf.cond(tf.equal(pedID, egoped), lambda: goal_linear_output(), lambda: linear_output())
+                self.initial_output[ped], self.output_states[ped], self.initial_states[ped] = tf.cond(tf.equal(pedID, egoped), lambda: goal_linear_output(), lambda: linear_output())
 
                 # with tf.name_scope("store_distribution_parameters"):
                 #    # Store the distribution parameters for the current ped
