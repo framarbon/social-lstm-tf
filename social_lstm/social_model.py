@@ -66,7 +66,7 @@ class SocialModel():
         # Construct the basicLSTMCell recurrent unit with a dimension given by args.rnn_size
         with tf.name_scope("LSTM_cell"):
             cell = rnn_cell.BasicLSTMCell(self.rnn_size, state_is_tuple=False)
-            ego_cell = rnn_cell.BasicLSTMCell(self.output_size, state_is_tuple=False)
+            ego_cell = rnn_cell.BasicLSTMCell(self.output_size, state_is_tuple=True)
             # if not infer and args.keep_prob < 1:
             # cell = rnn_cell.DropoutWrapper(cell, output_keep_prob=args.keep_prob)
 
@@ -140,13 +140,15 @@ class SocialModel():
             ego_ped = tf.constant(1.0, name="ego_ped")
 
         def goal_output():
+            init_state = tf.nn.rnn_cell.LSTMStateTuple(self.LSTM_ego_state, initial_output)
             goal_input = tf.slice(current_frame_data, [ped, 7], [1, 2])  # Tensor of shape (1,2)
             with tf.name_scope("goal_embedding_operator"):
                 tensor_input = tf.nn.relu(tf.nn.xw_plus_b(goal_input, self.embedding_g_w, self.embedding_g_b))
             with tf.variable_scope("ego_LSTM"):
                 if seq > 0 or ped > 0:
                     scope.reuse_variables()
-                output, LSTM_ego_state = ego_cell(tensor_input, tf.concat([self.LSTM_ego_state, initial_output],1))
+                output, full_state = ego_cell(tensor_input, init_state)
+            LSTM_ego_state, _ = full_state
             return output, LSTM_ego_state
 
         def no_goal():
@@ -203,7 +205,7 @@ class SocialModel():
                 # Apply the linear layer. Output would be a tensor of shape 1 x output_size
                 with tf.name_scope("output_linear_layer"):
                     initial_output = tf.nn.xw_plus_b(self.output_states[ped], self.output_w, self.output_b)
-                    self.initial_output[ped], self.LSTM_ego_state = tf.cond(tf.equal(pedID,ego_ped), lambda: goal_output(), lambda: no_goal())
+                self.initial_output[ped], self.LSTM_ego_state = tf.cond(tf.equal(pedID,ego_ped), lambda: goal_output(), lambda: no_goal())
 
                 # with tf.name_scope("store_distribution_parameters"):
                 #    # Store the distribution parameters for the current ped
