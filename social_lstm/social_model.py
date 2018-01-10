@@ -140,10 +140,11 @@ class SocialModel():
             ego_ped = tf.constant(1.0, name="ego_ped")
 
         def goal_output():
+            goal_input = tf.slice(current_frame_data, [ped, 7], [1, 2])  # Tensor of shape (1,2)
             with tf.variable_scope("ego_LSTM"):
                 if seq > 0 or ped > 0:
                     scope.reuse_variables()
-                output, LSTM_ego_state = ego_cell(initial_output, self.LSTM_ego_state)
+                output, LSTM_ego_state = ego_cell(tf.concat([initial_output, goal_input], 1), self.LSTM_ego_state)
             return output, LSTM_ego_state
 
         def no_goal():
