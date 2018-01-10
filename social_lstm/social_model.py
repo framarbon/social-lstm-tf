@@ -35,7 +35,7 @@ class SocialModel():
         self.grid_size = args.grid_size
         self.size_data_state = 9
 
-        self.predicted_var = (self.size_data_state-1)/2
+        self.predicted_var = 1
 
         # Maximum number of peds
         self.maxNumPeds = args.maxNumPeds
