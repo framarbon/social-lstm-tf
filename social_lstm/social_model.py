@@ -143,8 +143,8 @@ class SocialModel():
                 if seq > 0 or ped > 0:
                     scope.reuse_variables()
                 output_states, LSTM_state = ego_cell(goal_emb, self.initial_states[ped])
-            with tf.name_scope("goal_output"):
-                initial_output = tf.nn.xw_plus_b(output_states, self.output_goal_w, self.output_goal_b)
+            with tf.name_scope("output_linear_layer"):
+                initial_output = tf.nn.xw_plus_b(output_states, self.output_w, self.output_b)
             return initial_output, output_states, LSTM_state
 
         def linear_output():
@@ -285,8 +285,6 @@ class SocialModel():
                                                initializer=tf.truncated_normal_initializer(stddev=0.1))
             self.goal_b = tf.get_variable("embedding_goal_b", [self.embedding_size],
                                                initializer=tf.constant_initializer(0.1))
-            # tf.summary.histogram("weights", self.embedding_w)
-            # tf.summary.histogram("biases", self.embedding_b)
 
         with tf.variable_scope("obstacle_embedding"):
             self.embedding_o_r_w = tf.get_variable("embedding_o_r_w", [self.grid_size**2, self.embedding_size/2],
@@ -315,11 +313,6 @@ class SocialModel():
             self.output_b = tf.get_variable("output_b", [self.output_size], initializer=tf.constant_initializer(0.1))
             # tf.summary.histogram("weights", self.output_w)
             # tf.summary.histogram("biases", self.output_b)
-
-        with tf.variable_scope("Ego_output_layer"):
-            self.output_goal_w = tf.get_variable("output_goal_w", [self.rnn_size, self.output_size],
-                                            initializer=tf.truncated_normal_initializer(stddev=0.1))
-            self.output_goal_b = tf.get_variable("output_goal_b", [self.output_size], initializer=tf.constant_initializer(0.1))
 
     def tf_2d_normal(self, x, y, mux, muy, sx, sy, rho):
         '''
