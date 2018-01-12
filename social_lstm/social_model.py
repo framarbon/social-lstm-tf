@@ -258,17 +258,17 @@ class SocialModel():
     def define_embedding_and_output_layers(self):
         # Define variables for the spatial coordinates embedding layer
         with tf.variable_scope("coordinate_embedding"):
-            self.embedding_p_w = tf.get_variable("embedding_p_w", [2, self.embedding_size/self.predicted_var],
+            self.embedding_p_w = tf.get_variable("embedding_p_w", [2, self.embedding_size],
                                                initializer=tf.truncated_normal_initializer(stddev=0.1))
-            self.embedding_p_b = tf.get_variable("embedding_p_b", [self.embedding_size/self.predicted_var],
+            self.embedding_p_b = tf.get_variable("embedding_p_b", [self.embedding_size],
                                                initializer=tf.constant_initializer(0.1))
-            self.embedding_v_w = tf.get_variable("embedding_v_w", [2, self.embedding_size/self.predicted_var],
+            self.embedding_v_w = tf.get_variable("embedding_v_w", [2, self.embedding_size],
                                                initializer=tf.truncated_normal_initializer(stddev=0.1))
-            self.embedding_v_b = tf.get_variable("embedding_v_b", [self.embedding_size/self.predicted_var],
+            self.embedding_v_b = tf.get_variable("embedding_v_b", [self.embedding_size],
                                                initializer=tf.constant_initializer(0.1))
-            self.embedding_a_w = tf.get_variable("embedding_a_w", [2, self.embedding_size/self.predicted_var],
+            self.embedding_a_w = tf.get_variable("embedding_a_w", [2, self.embedding_size],
                                                initializer=tf.truncated_normal_initializer(stddev=0.1))
-            self.embedding_a_b = tf.get_variable("embedding_a_b", [self.embedding_size/self.predicted_var],
+            self.embedding_a_b = tf.get_variable("embedding_a_b", [self.embedding_size],
                                                initializer=tf.constant_initializer(0.1))
 
             # tf.summary.histogram("weights", self.embedding_w)
