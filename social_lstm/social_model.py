@@ -196,7 +196,14 @@ class SocialModel():
                         scope.reuse_variables()
                     self.output_states[ped], self.initial_states[ped] = cell(complete_input, self.initial_states[ped])
 
-                self.initial_output[ped], self.output_states[ped], self.initial_states[ped] = tf.cond(tf.equal(pedID, egoped), lambda: goal_linear_output(), lambda: linear_output())
+                # with tf.name_scope("reshape_output"):
+                # Store the output hidden state for the current pedestrian
+                #    self.output_states[ped] = tf.reshape(tf.concat(1, output), [-1, args.rnn_size])
+                #    print self.output_states[ped]
+
+                # Apply the linear layer. Output would be a tensor of shape 1 x output_size
+                with tf.name_scope("output_linear_layer"):
+                    self.initial_output[ped] = tf.nn.xw_plus_b(self.output_states[ped], self.output_w, self.output_b)
 
                 # with tf.name_scope("store_distribution_parameters"):
                 #    # Store the distribution parameters for the current ped
@@ -281,12 +288,6 @@ class SocialModel():
             # tf.summary.histogram("weights", self.embedding_w)
             # tf.summary.histogram("biases", self.embedding_b)
 
-        with tf.variable_scope("Goal_embedding"):
-            self.goal_w = tf.get_variable("embedding_goal_w", [2, self.embedding_size],
-                                               initializer=tf.truncated_normal_initializer(stddev=0.1))
-            self.goal_b = tf.get_variable("embedding_goal_b", [self.embedding_size],
-                                               initializer=tf.constant_initializer(0.1))
-
         with tf.variable_scope("obstacle_embedding"):
             self.embedding_o_r_w = tf.get_variable("embedding_o_r_w", [self.grid_size**2, self.embedding_size/2],
                                                  initializer=tf.truncated_normal_initializer(stddev=0.1))
@@ -328,7 +329,7 @@ class SocialModel():
         rho : Correlation factor of the distribution
         '''
         # eq 3 in the paper
-        # and eq 24 & 25 in Graves (2013)
+        # and  oeq 24 & 25 in Graves (2013)
         # Calculate (x - mux) and (y-muy)
         normx = tf.subtract(x, mux)
         normy = tf.subtract(y, muy)
