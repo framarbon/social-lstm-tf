@@ -34,8 +34,8 @@ class SocialModel():
         self.rnn_size = args.rnn_size
         self.grid_size = args.grid_size
 
-        self.size_data_state = 3
-        self.predicted_var = (self.size_data_state-1)/2
+        self.size_data_state = 9
+        self.predicted_var = 1
 
         # Maximum number of peds
         self.maxNumPeds = args.maxNumPeds
@@ -48,12 +48,26 @@ class SocialModel():
         # Distance metric map
         self.dist_map = args.dist_map
 
+        # Variable to hold the value of the learning rate
+        self.lr = tf.Variable(args.learning_rate, trainable=False, name="learning_rate")
+
+        # Output dimension of the model
+        self.output_size = 5*self.predicted_var
+        self.mixture_size = args.num_dist
+
+        # Neighborhood size
+        self.neighborhood_size = args.neighborhood_size
+
+        # Embedding size
+        self.embedding_size = args.embedding_size
+
         # NOTE : For now assuming, batch_size is always 1. That is the input
         # to the model is always a sequence of frames
 
         # Construct the basicLSTMCell recurrent unit with a dimension given by args.rnn_size
         with tf.name_scope("LSTM_cell"):
-            cell = rnn_cell.BasicLSTMCell(args.rnn_size, state_is_tuple=False)
+            cell = rnn_cell.BasicLSTMCell(self.rnn_size, state_is_tuple=False)
+            ego_cell = rnn_cell.BasicLSTMCell(self.rnn_size, state_is_tuple=False)
             # if not infer and args.keep_prob < 1:
             # cell = rnn_cell.DropoutWrapper(cell, output_keep_prob=args.keep_prob)
 
@@ -74,19 +88,6 @@ class SocialModel():
         # a grid cell of other pedestrian
         self.grid_data = tf.placeholder(tf.float32, [args.seq_length, args.maxNumPeds, args.maxNumPeds,
                                                      args.grid_size * args.grid_size], name="grid_data")
-
-        # Variable to hold the value of the learning rate
-        self.lr = tf.Variable(args.learning_rate, trainable=False, name="learning_rate")
-
-        # Output dimension of the model
-        self.output_size = 5*self.predicted_var
-        self.mixture_size = args.num_dist
-
-        # Neighborhood size
-        self.neighborhood_size = args.neighborhood_size
-
-        # Embedding size
-        self.embedding_size = args.embedding_size
 
         # Define embedding and output layers
         self.define_embedding_and_output_layers()
@@ -131,6 +132,28 @@ class SocialModel():
         with tf.name_scope("Non_existent_ped_stuff"):
             nonexistent_ped = tf.constant(0.0, name="zero_ped")
 
+        # Tensor to represent ego ped
+        with tf.name_scope("Ego_ped_stuff"):
+            egoped = tf.constant(1.0, name="ego_ped")
+
+        def goal_linear_output():
+            with tf.name_scope("goal_embedding"):
+                goal_input = tf.slice(current_frame_data, [ped, 7], [1, 2])  # Tensor of shape (1,2)
+                goal_emb = tf.nn.relu(tf.nn.xw_plus_b(goal_input, self.goal_w, self.goal_b))
+            with tf.variable_scope("ego_LSTM") as scope:
+                if seq > 0 or ped > 0:
+                    scope.reuse_variables()
+                output_states, LSTM_state = ego_cell(goal_emb, self.initial_states[ped])
+            with tf.name_scope("output_linear_layer"):
+                initial_output = tf.nn.xw_plus_b(output_states, self.output_w, self.output_b)
+            return initial_output, output_states, LSTM_state
+
+        def linear_output():
+            with tf.name_scope("output_linear_layer"):
+                initial_output = tf.nn.xw_plus_b(self.output_states[ped], self.output_w, self.output_b)
+            return initial_output, self.output_states[ped], self.initial_states[ped]
+
+
         # Iterate over each frame in the sequence
         for seq, frame in enumerate(frame_data):
             print "Frame number", seq
@@ -173,14 +196,7 @@ class SocialModel():
                         scope.reuse_variables()
                     self.output_states[ped], self.initial_states[ped] = cell(complete_input, self.initial_states[ped])
 
-                # with tf.name_scope("reshape_output"):
-                # Store the output hidden state for the current pedestrian
-                #    self.output_states[ped] = tf.reshape(tf.concat(1, output), [-1, args.rnn_size])
-                #    print self.output_states[ped]
-
-                # Apply the linear layer. Output would be a tensor of shape 1 x output_size
-                with tf.name_scope("output_linear_layer"):
-                    self.initial_output[ped] = tf.nn.xw_plus_b(self.output_states[ped], self.output_w, self.output_b)
+                self.initial_output[ped], self.output_states[ped], self.initial_states[ped] = tf.cond(tf.equal(pedID, egoped), lambda: goal_linear_output(), lambda: linear_output())
 
                 # with tf.name_scope("store_distribution_parameters"):
                 #    # Store the distribution parameters for the current ped
@@ -264,6 +280,12 @@ class SocialModel():
                                                initializer=tf.constant_initializer(0.1))
             # tf.summary.histogram("weights", self.embedding_w)
             # tf.summary.histogram("biases", self.embedding_b)
+
+        with tf.variable_scope("Goal_embedding"):
+            self.goal_w = tf.get_variable("embedding_goal_w", [2, self.embedding_size],
+                                               initializer=tf.truncated_normal_initializer(stddev=0.1))
+            self.goal_b = tf.get_variable("embedding_goal_b", [self.embedding_size],
+                                               initializer=tf.constant_initializer(0.1))
 
         with tf.variable_scope("obstacle_embedding"):
             self.embedding_o_r_w = tf.get_variable("embedding_o_r_w", [self.grid_size**2, self.embedding_size/2],
