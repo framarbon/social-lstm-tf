@@ -142,9 +142,9 @@ class SocialModel():
         def goal_linear_output():
             with tf.name_scope("goal_embedding"):
                 goal_input = tf.slice(current_frame_data, [ped, 7], [1, 2])  # Tensor of shape (1,2)
-                goal_emb = tf.nn.xw_plus_b(goal_input, self.goal_w, self.goal_b)
+                goal_emb = tf.nn.relu(tf.nn.xw_plus_b(goal_input, self.goal_w, self.goal_b))
                 ego_input = tf.concat([self.output_states[ped], goal_emb], 1)
-                # ego_output, self.LSTM_ego_state = ego_cell(ego_input, self.LSTM_ego_state)
+
             with tf.variable_scope("ego_LSTM") as scope:
                 if seq > 0 or ped > 0:
                     scope.reuse_variables()
