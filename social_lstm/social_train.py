@@ -32,6 +32,9 @@ def main():
     # Number of epochs parameter
     parser.add_argument('--num_epochs', type=int, default=50,
                         help='number of epochs')
+    # Number of gaussians dist
+    parser.add_argument('--num_dist', type=int, default=20,
+                        help='number of distribution')
     # Frequency at which the model should be saved parameter
     parser.add_argument('--save_every', type=int, default=10,
                         help='save frequency')
