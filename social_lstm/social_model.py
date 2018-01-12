@@ -265,13 +265,13 @@ class SocialModel():
             # tf.summary.histogram("biases", self.embedding_b)
 
         with tf.variable_scope("obstacle_embedding"):
-            self.embedding_o_r_w = tf.get_variable("embedding_o_r_w", [self.grid_size**2, self.embedding_size/2],
+            self.embedding_o_r_w = tf.get_variable("embedding_o_r_w", [self.grid_size**2, self.embedding_size],
                                                  initializer=tf.truncated_normal_initializer(stddev=0.1))
-            self.embedding_o_r_b = tf.get_variable("embedding_o_r_b", [self.embedding_size/2],
+            self.embedding_o_r_b = tf.get_variable("embedding_o_r_b", [self.embedding_size],
                                                  initializer=tf.constant_initializer(0.1))
-            self.embedding_o_d_w = tf.get_variable("embedding_o_d_w", [self.grid_size**2, self.embedding_size/2],
+            self.embedding_o_d_w = tf.get_variable("embedding_o_d_w", [self.grid_size**2, self.embedding_size],
                                                  initializer=tf.truncated_normal_initializer(stddev=0.1))
-            self.embedding_o_d_b = tf.get_variable("embedding_o_d_b", [self.embedding_size/2],
+            self.embedding_o_d_b = tf.get_variable("embedding_o_d_b", [self.embedding_size],
                                                  initializer=tf.constant_initializer(0.1))
 
         # Define variables for the social tensor embedding layer
@@ -438,7 +438,7 @@ class SocialModel():
                     tf.nn.xw_plus_b(tf.transpose(pool_ratio_grid), self.embedding_o_r_w, self.embedding_o_r_b))
                 embedded_dist = tf.nn.relu(
                     tf.nn.xw_plus_b(tf.transpose(pool_dist_grid), self.embedding_o_d_w, self.embedding_o_d_b))
-                static_tensor = tf.concat([embedded_dist, embedded_ratio, tf.zeros([1, self.embedding_size])], 1)
+                static_tensor = tf.concat([embedded_dist, embedded_ratio], 1)
 
             # Including static obstacle information into the social tensor
             social_tensor_ped = tf.add(social_tensor_ped, static_tensor)
