@@ -159,13 +159,13 @@ class SocialModel():
                     # Embed the spatial input
                     embedded_spatial_input1 = tf.nn.relu(tf.nn.xw_plus_b(self.spatial_input_list[0], self.embedding_p_w, self.embedding_p_b))
                     embedded_spatial_input2 = tf.nn.relu(tf.nn.xw_plus_b(self.spatial_input_list[1], self.embedding_v_w, self.embedding_v_b))
-                    # embedded_spatial_input3 = tf.nn.relu(tf.nn.xw_plus_b(self.spatial_input_list[2], self.embedding_a_w, self.embedding_a_b))
+                    embedded_spatial_input3 = tf.nn.relu(tf.nn.xw_plus_b(self.spatial_input_list[2], self.embedding_a_w, self.embedding_a_b))
                     # Embed the tensor input
                     embedded_tensor_input = tf.nn.relu(tf.nn.xw_plus_b(self.tensor_input, self.embedding_t_w, self.embedding_t_b))
 
                 with tf.name_scope("concatenate_embeddings"):
                     # Concatenate the embeddings
-                    complete_input = tf.concat([embedded_spatial_input1,embedded_spatial_input2, embedded_tensor_input], 1)
+                    complete_input = tf.concat([embedded_spatial_input1,embedded_spatial_input2,embedded_spatial_input3, embedded_tensor_input], 1)
 
                 # One step of LSTM
                 with tf.variable_scope("LSTM") as scope:
@@ -266,10 +266,10 @@ class SocialModel():
                                                initializer=tf.truncated_normal_initializer(stddev=0.1))
             self.embedding_v_b = tf.get_variable("embedding_v_b", [self.embedding_size/self.predicted_var],
                                                initializer=tf.constant_initializer(0.1))
-            # self.embedding_a_w = tf.get_variable("embedding_a_w", [2, self.embedding_size/self.predicted_var],
-            #                                    initializer=tf.truncated_normal_initializer(stddev=0.1))
-            # self.embedding_a_b = tf.get_variable("embedding_a_b", [self.embedding_size/self.predicted_var],
-            #                                    initializer=tf.constant_initializer(0.1))
+            self.embedding_a_w = tf.get_variable("embedding_a_w", [2, self.embedding_size/self.predicted_var],
+                                               initializer=tf.truncated_normal_initializer(stddev=0.1))
+            self.embedding_a_b = tf.get_variable("embedding_a_b", [self.embedding_size/self.predicted_var],
+                                               initializer=tf.constant_initializer(0.1))
 
             # tf.summary.histogram("weights", self.embedding_w)
             # tf.summary.histogram("biases", self.embedding_b)
