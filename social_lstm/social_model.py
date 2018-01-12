@@ -335,6 +335,9 @@ class SocialModel():
         x_data : target x points
         y_data : target y points
         '''
+        # For numerical stability purposes
+        epsilon = 1e-20
+
         data = tf.squeeze(tf.stack([x_data, y_data], axis=1), [2])
 
         # Calculate the Log PDF of the data w.r.t to the distribution
@@ -343,9 +346,10 @@ class SocialModel():
         pdf = tf.expand_dims(pdf, 1)
 
         # weighting the biv. gaussian distributions
-        result = tf.matmul(z_alpha, pdf)
-        result = tf.reduce_sum(result, 1, keep_dims=True)
-        result = -tf.log(result)
+        mixture = tf.matmul(z_alpha, pdf)
+        result = tf.reduce_sum(mixture, 1)
+        # Apply the log operation
+        result = -tf.log(tf.maximum(result, epsilon))  # Numerical stability
 
         return tf.squeeze(result), tf.squeeze(result)
 
