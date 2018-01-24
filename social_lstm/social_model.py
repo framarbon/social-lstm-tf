@@ -143,8 +143,7 @@ class SocialModel():
                     # Extract x and y positions of the current ped
                     self.spatial_input = tf.slice(current_frame_data, [ped, 1], [1, 2*self.predicted_var])  # Tensor of shape (1,2)
                     # Extract the social tensor of the current ped
-                    self.tensor_input = tf.slice(social_tensor, [ped, 0], [1,
-                                                                           args.grid_size * args.grid_size * args.rnn_size])  # Tensor of shape (1, g*g*r)
+                    self.tensor_input = tf.slice(social_tensor, [ped, 0], [1, args.grid_size * args.grid_size])  # Tensor of shape (1, g*g*r)
 
                 with tf.name_scope("embeddings_operations"):
                     # Embed the spatial input
@@ -259,7 +258,7 @@ class SocialModel():
         # Define variables for the social tensor embedding layer
         with tf.variable_scope("tensor_embedding"):
             self.embedding_t_w = tf.get_variable("embedding_t_w",
-                                                 [self.grid_size * self.grid_size * self.rnn_size, self.embedding_size],
+                                                 [self.grid_size * self.grid_size, self.embedding_size],
                                                  initializer=tf.truncated_normal_initializer(stddev=0.1))
             self.embedding_t_b = tf.get_variable("embedding_t_b", [self.embedding_size],
                                                  initializer=tf.constant_initializer(0.1))
@@ -355,7 +354,7 @@ class SocialModel():
         output_states : A list of tensors each of shape 1 x RNN_size of length MNP
         '''
         # Create a zero tensor of shape MNP x (GS**2) x RNN_size
-        social_tensor = tf.zeros([self.maxNumPeds, self.grid_size * self.grid_size, self.rnn_size],
+        social_tensor = tf.zeros([self.maxNumPeds, self.grid_size * self.grid_size],
                                  name="social_tensor")
         # Create a list of zero tensors each of shape 1 x (GS**2) x RNN_size of length MNP
         social_tensor = tf.split(social_tensor, self.maxNumPeds, 0)
@@ -376,8 +375,7 @@ class SocialModel():
         # Concatenate the social tensor from a list to a tensor of shape MNP x (GS**2) x RNN_size
         social_tensor = tf.concat(social_tensor, 0)
         # Reshape the tensor to match the dimensions MNP x (GS**2 * RNN_size)
-        social_tensor = tf.reshape(social_tensor,
-                                   [self.maxNumPeds, self.grid_size * self.grid_size * self.rnn_size])
+        social_tensor = tf.reshape(social_tensor, [self.maxNumPeds, self.grid_size * self.grid_size])
         return social_tensor
 
     def sample_gaussian_2d(self, mux, muy, sx, sy, rho):
