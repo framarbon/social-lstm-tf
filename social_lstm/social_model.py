@@ -371,9 +371,7 @@ class SocialModel():
         for ped in range(self.maxNumPeds):
             # Compute social tensor for the current pedestrian
             with tf.name_scope("tensor_calculation"):
-
-                social_tensor_ped = tf.matmul(tf.transpose(grid_frame_ped_data[ped]), hidden_states)
-                social_tensor[ped] = tf.reshape(social_tensor_ped, [1, self.grid_size * self.grid_size, self.rnn_size])
+                social_tensor[ped] = tf.reduce_sum(grid_frame_ped_data[ped], 0)
 
         # Concatenate the social tensor from a list to a tensor of shape MNP x (GS**2) x RNN_size
         social_tensor = tf.concat(social_tensor, 0)
