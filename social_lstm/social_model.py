@@ -129,7 +129,7 @@ class SocialModel():
             current_frame_data = frame  # MNP x 3 tensor
             current_grid_frame_data = grid_frame_data[seq]  # MNP x MNP x (GS**2) tensor
             # MNP x (GS**2 * RNN_size)
-            social_tensor = self.getSocialTensor(current_frame_data, current_grid_frame_data, self.output_states)
+            # social_tensor = self.getSocialTensor(current_frame_data, current_grid_frame_data, self.output_states)
             # NOTE: Using a tensor of zeros as the social tensor
             # social_tensor = tf.zeros([args.maxNumPeds, args.grid_size*args.grid_size*args.rnn_size])
 
@@ -143,25 +143,25 @@ class SocialModel():
                     # Extract x and y positions of the current ped
                     self.spatial_input = tf.slice(current_frame_data, [ped, 1], [1, 2*self.predicted_var])  # Tensor of shape (1,2)
                     # Extract the social tensor of the current ped
-                    self.tensor_input = tf.slice(social_tensor, [ped, 0], [1, args.grid_size * args.grid_size])  # Tensor of shape (1, g*g*r)
+                    # self.tensor_input = tf.slice(social_tensor, [ped, 0], [1, args.grid_size * args.grid_size])  # Tensor of shape (1, g*g*r)
 
                 with tf.name_scope("embeddings_operations"):
                     # Embed the spatial input
                     embedded_spatial_input = tf.nn.relu(
                         tf.nn.xw_plus_b(self.spatial_input, self.embedding_w, self.embedding_b))
                     # Embed the tensor input
-                    embedded_tensor_input = tf.nn.relu(
-                        tf.nn.xw_plus_b(self.tensor_input, self.embedding_t_w, self.embedding_t_b))
+                    # embedded_tensor_input = tf.nn.relu(
+                    #     tf.nn.xw_plus_b(self.tensor_input, self.embedding_t_w, self.embedding_t_b))
 
-                with tf.name_scope("concatenate_embeddings"):
-                    # Concatenate the embeddings
-                    complete_input = tf.concat([embedded_spatial_input, embedded_tensor_input], 1)
+                # with tf.name_scope("concatenate_embeddings"):
+                #     # Concatenate the embeddings
+                #     complete_input = tf.concat([embedded_spatial_input, embedded_tensor_input], 1)
 
                 # One step of LSTM
                 with tf.variable_scope("LSTM") as scope:
                     if seq > 0 or ped > 0:
                         scope.reuse_variables()
-                    self.output_states[ped], self.initial_states[ped] = cell(complete_input, self.initial_states[ped])
+                    self.output_states[ped], self.initial_states[ped] = cell(embedded_spatial_input, self.initial_states[ped])
 
                 # with tf.name_scope("reshape_output"):
                 # Store the output hidden state for the current pedestrian
