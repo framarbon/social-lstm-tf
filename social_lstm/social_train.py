@@ -167,12 +167,13 @@ def train(args):
                     # d_batch would be a scalar identifying the dataset from which this sequence is extracted
                     x_batch, y_batch, d_batch = x[batch], y[batch], d[batch]
 
-                    if d_batch == 0 and datasets[0] == 0:
-                        dataset_data = [640, 480]
-                    elif datasets[0] > 4:
-                        dataset_data = [50, 50]
-                    else:
-                        dataset_data = [720, 576]
+                    # if d_batch == 0 and datasets[0] == 0:
+                    #     dataset_data = [640, 480]
+                    # elif datasets[0] > 4:
+                    #     dataset_data = [50, 50]
+                    # else:
+                    #     dataset_data = [720, 576]
+                    dataset_data = [720, 576]
 
                     grid_batch = getSequenceGridMask(x_batch, dataset_data, args.neighborhood_size, args.grid_size)
 
@@ -245,12 +246,13 @@ def train(args):
                     # d_batch would be a scalar identifying the dataset from which this sequence is extracted
                     x_batch, y_batch, d_batch = x[batch], y[batch], d[batch]
 
-                    if d_batch == 0 and datasets[0] == 0:
-                        dataset_data = [640, 480]
-                    elif datasets[0] > 4:
-                        dataset_data = [50, 50]
-                    else:
-                        dataset_data = [720, 576]
+                    # if d_batch == 0 and datasets[0] == 0:
+                    #     dataset_data = [640, 480]
+                    # elif datasets[0] > 4:
+                    #     dataset_data = [50, 50]
+                    # else:
+                    #     dataset_data = [720, 576]
+                    dataset_data = [720, 576]
 
                     grid_batch = getSequenceGridMask(x_batch, dataset_data, args.neighborhood_size, args.grid_size)
 
