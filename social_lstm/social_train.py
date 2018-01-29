@@ -33,7 +33,7 @@ def main():
     parser.add_argument('--num_epochs', type=int, default=50,
                         help='number of epochs')
     # Number of gaussians dist
-    parser.add_argument('--num_dist', type=int, default=20,
+    parser.add_argument('--num_dist', type=int, default=5,
                         help='number of distribution')
     # Frequency at which the model should be saved parameter
     parser.add_argument('--save_every', type=int, default=10,
@@ -56,18 +56,18 @@ def main():
     parser.add_argument('--embedding_size', type=int, default=64,
                         help='Embedding dimension for the spatial coordinates')
     # Size of neighborhood to be considered parameter
-    parser.add_argument('--neighborhood_size', type=int, default=12,
+    parser.add_argument('--neighborhood_size', type=int, default=32,
                         help='Neighborhood size to be considered for social grid')
     # Size of the social grid parameter
-    parser.add_argument('--grid_size', type=int, default=4,
+    parser.add_argument('--grid_size', type=int, default=8,
                         help='Grid size of the social grid')
     # Maximum number of pedestrians to be considered
     parser.add_argument('--maxNumPeds', type=int, default=40,
                         help='Maximum Number of Pedestrians')
     # The training dataset
-    parser.add_argument('-t', '--trainingDataset', type=int, nargs='+', default=[0,1,2,3,4,5])
+    parser.add_argument('-t', '--trainingDataset', type=int, nargs='+', default=[0,1,2])
     # The validation dataset
-    parser.add_argument('-v', '--validDataset', type=int, default=2)
+    parser.add_argument('-v', '--validDataset', type=int, default=1)
 
     # Lambda regularization parameter (L2)
     parser.add_argument('--lambda_param', type=float, default=0.0005,
@@ -85,7 +85,7 @@ def main():
     parser.add_argument('--pipeline', type=bool, default=False,
                         help='Pipeline activation')
     # Scaling factor of Obstacle map
-    parser.add_argument('--scale', type=int, default=10,
+    parser.add_argument('--scale', type=int, default=1,
                         help='Scaling factor of Obstacle map')
 
     args = parser.parse_args()
@@ -184,12 +184,13 @@ def train(args):
                     # d_batch would be a scalar identifying the dataset from which this sequence is extracted
                     x_batch, y_batch, d_batch = x[batch], y[batch], d[batch]
 
-                    if d_batch == 0 and datasets[0] == 0:
-                        dataset_data = [640, 480]
-                    elif datasets[0] > 4:
-                        dataset_data = [50, 50]
-                    else:
-                        dataset_data = [720, 576]
+                    # if d_batch == 0 and datasets[0] == 0:
+                    #     dataset_data = [640, 480]
+                    # elif datasets[0] > 4:
+                    #     dataset_data = [50, 50]
+                    # else:
+                    #     dataset_data = [720, 576]
+                    dataset_data = [720, 576]
 
                     grid_batch = getSequenceGridMask(x_batch, dataset_data, args.neighborhood_size, args.grid_size)
 
@@ -262,12 +263,13 @@ def train(args):
                     # d_batch would be a scalar identifying the dataset from which this sequence is extracted
                     x_batch, y_batch, d_batch = x[batch], y[batch], d[batch]
 
-                    if d_batch == 0 and datasets[0] == 0:
-                        dataset_data = [640, 480]
-                    elif datasets[0] > 4:
-                        dataset_data = [50, 50]
-                    else:
-                        dataset_data = [720, 576]
+                    # if d_batch == 0 and datasets[0] == 0:
+                    #     dataset_data = [640, 480]
+                    # elif datasets[0] > 4:
+                    #     dataset_data = [50, 50]
+                    # else:
+                    #     dataset_data = [720, 576]
+                    dataset_data = [720, 576]
 
                     grid_batch = getSequenceGridMask(x_batch, dataset_data, args.neighborhood_size, args.grid_size)
 
