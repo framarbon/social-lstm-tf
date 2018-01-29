@@ -222,8 +222,8 @@ def train(args):
             # Validation
             data_loader.reset_batch_pointer(valid=True)
             loss_epoch = 0
-            loss_epoch_pos = [0, 0]
-            loss_epoch_count = [0, 0]
+            loss_epoch_pos = 0
+            loss_epoch_count = 0
             # writer.add_graph(sess.graph)
 
             for b in range(data_loader.valid_num_batches):
@@ -265,8 +265,8 @@ def train(args):
                 loss_batch = loss_batch / data_loader.batch_size
                 loss_batch_pos = loss_batch_pos / data_loader.batch_size
                 loss_epoch += loss_batch
-                loss_epoch_pos[v_index.index(d_batch)] += loss_batch_pos
-                loss_epoch_count[v_index.index(d_batch)] += 1
+                loss_epoch_pos += loss_batch_pos
+                loss_epoch_count += 1
 
                 # test_cost = tf.Summary(value=[tf.Summary.Value(tag="TestCost", simple_value=loss_batch)])
                 # writer.add_summary(test_cost, e * data_loader.num_batches + b)
@@ -279,21 +279,18 @@ def train(args):
                         loss_batch, loss_batch_pos))
 
             loss_epoch /= data_loader.valid_num_batches
-            loss_epoch_pos = [x / c for x, c in zip(loss_epoch_pos, loss_epoch_count)]
+            loss_epoch_pos /= loss_epoch_count
             # test_cost = tf.Summary(value=[tf.Summary.Value(tag="TestCost", simple_value=loss_epoch)])
             # writer.add_summary(test_cost, e * data_loader.num_batches + b)
 
             # Update best validation loss until now
-            if loss_epoch_pos[0] < best_val_loss1:
-                best_val_loss1 = loss_epoch_pos[0]
+            if loss_epoch_pos < best_val_loss1:
+                best_val_loss1 = loss_epoch_pos
                 best_epoch1 = e
-            if loss_epoch_pos[1] < best_val_loss2:
-                best_val_loss2 = loss_epoch_pos[1]
-                best_epoch2 = e
 
-            print('(epoch {}), Epoch validation loss = {:.3f} | {:.3f} {:.3f}, counter = {:.0f} | {:.0f}'
-                  .format(e, loss_epoch, loss_epoch_pos[0], loss_epoch_pos[1], loss_epoch_count[0], loss_epoch_count[1]))
-            print 'Best epoch', best_epoch1, ' and ', best_epoch2, 'Best validation loss', best_val_loss1,' and ', best_val_loss2
+            print('(epoch {}), Epoch validation loss = {:.3f} | {:.3f}, counter = {:.0f}'
+                  .format(e, loss_epoch, loss_epoch_pos, loss_epoch_count[0]))
+            print 'Best epoch', best_epoch1, ' and ', best_epoch2, 'Best validation loss', best_val_loss1
             log_file_curve.write(str(loss_epoch)+'\n')
             log_file_pos.write(','.join(map(str, loss_epoch_pos)) + '\n')
 
@@ -306,8 +303,8 @@ def train(args):
                 saver.save(sess, checkpoint_path, global_step=e)
                 print("model saved to {}".format(checkpoint_path))
 
-        print 'Best epoch', best_epoch1, ' and ', best_epoch2, 'Best validation loss', best_val_loss1, ' and ', best_val_loss2
-        log_file.write(str(best_epoch1)+','+str(best_val_loss1)+','+str(best_epoch2)+','+str(best_val_loss2))
+        print 'Best epoch', best_epoch1, 'Best validation loss', best_val_loss1
+        log_file.write(str(best_epoch1)+','+str(best_val_loss1))
 
         # tf.summary.merge_all()
 
