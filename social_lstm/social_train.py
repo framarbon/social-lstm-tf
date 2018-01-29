@@ -53,18 +53,18 @@ def main():
     parser.add_argument('--embedding_size', type=int, default=64,
                         help='Embedding dimension for the spatial coordinates')
     # Size of neighborhood to be considered parameter
-    parser.add_argument('--neighborhood_size', type=int, default=12,
+    parser.add_argument('--neighborhood_size', type=int, default=32,
                         help='Neighborhood size to be considered for social grid')
     # Size of the social grid parameter
-    parser.add_argument('--grid_size', type=int, default=4,
+    parser.add_argument('--grid_size', type=int, default=8,
                         help='Grid size of the social grid')
     # Maximum number of pedestrians to be considered
     parser.add_argument('--maxNumPeds', type=int, default=40,
                         help='Maximum Number of Pedestrians')
     # The training dataset
-    parser.add_argument('-t', '--trainingDataset', type=int, nargs='+', default=[0,1,2,3,4,5])
+    parser.add_argument('-t', '--trainingDataset', type=int, nargs='+', default=[0,1,2])
     # The validation dataset
-    parser.add_argument('-v', '--validDataset', type=int, default=2)
+    parser.add_argument('-v', '--validDataset', type=int, default=1)
 
     # Lambda regularization parameter (L2)
     parser.add_argument('--lambda_param', type=float, default=0.0005,
