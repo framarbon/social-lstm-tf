@@ -294,7 +294,7 @@ def train(args):
                   .format(e, loss_epoch, loss_epoch_pos, loss_epoch_count))
             print 'Best epoch', best_epoch1, ' and ', best_epoch2, 'Best validation loss', best_val_loss1
             log_file_curve.write(str(loss_epoch)+'\n')
-            log_file_pos.write(','.join(map(str, loss_epoch_pos)) + '\n')
+            log_file_pos.write(str(loss_epoch_pos) + '\n')
 
             print '*****************'
 
