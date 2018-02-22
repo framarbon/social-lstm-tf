@@ -480,7 +480,7 @@ class SocialModel():
         x = np.random.multivariate_normal(mean, cov, 1)
         return x[0][0], x[0][1]
 
-    def sample(self, sess, traj, grid, dimensions, true_traj, num=10):
+    def sample(self, sess, traj, grid, dimensions, true_traj, d_batch, num=10):
         # traj is a sequence of frames (of length obs_length)
         # so traj shape is (obs_length x maxNumPeds x 3)
         # grid is a tensor of shape obs_length x maxNumPeds x maxNumPeds x (gs**2)
@@ -496,7 +496,7 @@ class SocialModel():
                                    (1, self.maxNumPeds, self.maxNumPeds, self.grid_size * self.grid_size))
 
             feed = {self.input_data: data, self.LSTM_states: states, self.grid_data: grid_data,
-                    self.target_data: target_data}
+                    self.target_data: target_data, self.map_index: d_batch}
 
             [states, cost] = sess.run([self.final_states, self.cost], feed)
             # writer.add_summary(s, index)
@@ -514,7 +514,7 @@ class SocialModel():
         for t in range(num):
             # print "**** NEW PREDICTION TIME STEP", t, "****"
             feed = {self.input_data: prev_data, self.LSTM_states: states, self.grid_data: prev_grid_data,
-                    self.target_data: prev_target_data}
+                    self.target_data: prev_target_data, self.map_index: [d_batch]}
             [output, states, cost] = sess.run([self.final_output, self.final_states, self.cost], feed)
             # writer.add_summary(s, t)
             # print "Cost", cost

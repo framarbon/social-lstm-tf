@@ -75,7 +75,9 @@ def main():
     # Model to be loaded
     parser.add_argument('--epoch', type=int, default=0,
                         help='Epoch of model to be loaded')
-    
+
+    parser.add_argument('--scale', type=int, default=10,
+                        help='Scaling factor of Obstacle map')
 
     # Parse the parameters
     sample_args = parser.parse_args()
@@ -86,6 +88,22 @@ def main():
     # Define the path for the config file for saved args
     with open(os.path.join(save_directory, 'social_config.pkl'), 'rb') as f:
         saved_args = pickle.load(f)
+
+
+    # Dataset to get data from
+    dataset = [sample_args.test_dataset]
+
+    # Create a SocialDataLoader object with batch_size 1 and seq_length equal to observed_length + pred_length
+    data_loader = SocialDataLoader(1, sample_args.pred_length + sample_args.obs_length, saved_args.maxNumPeds, dataset, True, infer=True)
+
+    saved_args.obs_maps = data_loader.get_obs_map()
+
+    saved_args.dist_map = get_distMap(saved_args.neighborhood_size*sample_args.scale)
+
+    saved_args.scale = sample_args.scale
+
+    # Reset all pointers of the data_loader
+    data_loader.reset_batch_pointer()
 
     # Create a SocialModel object with the saved_args and infer set to true
     model = SocialModel(saved_args, True)
@@ -105,15 +123,6 @@ def main():
     # Restore the model at the checkpoint
     # saver.restore(sess, ckpt.all_model_checkpoint_paths[sample_args.epoch])
     saver.restore(sess, ckpt.model_checkpoint_path)
-
-    # Dataset to get data from
-    dataset = [sample_args.test_dataset]
-
-    # Create a SocialDataLoader object with batch_size 1 and seq_length equal to observed_length + pred_length
-    data_loader = SocialDataLoader(1, sample_args.pred_length + sample_args.obs_length, saved_args.maxNumPeds, dataset, True, infer=True)
-
-    # Reset all pointers of the data_loader
-    data_loader.reset_batch_pointer()
 
     results = []
     results2 = []
@@ -147,7 +156,7 @@ def main():
         print "********************** SAMPLING A NEW TRAJECTORY", b, "******************************"
         batch_error = 0
         for i in range(10):
-            complete_traj = model.sample(sess, obs_traj, obs_grid, dimensions, x_batch, sample_args.pred_length)
+            complete_traj = model.sample(sess, obs_traj, obs_grid, dimensions, x_batch, sample_args.pred_length, d_batch[0])
             inter_result.append((complete_traj))
             batch_error += get_mean_error(complete_traj, x[0], sample_args.obs_length, saved_args.maxNumPeds)
 
@@ -172,6 +181,19 @@ def main():
     print "Saving results"
     with open(os.path.join(save_directory, 'social_results.pkl'), 'wb') as f:
         pickle.dump(results, f)
+
+def get_distMap(ns):
+    # Half Neighborhood size
+    hns = ns / 2
+    distMap = np.zeros([ns, ns], dtype=np.float)
+    for x in range(ns):
+        xnorm = (x - hns) ** 2
+        for y in range(ns):
+            ynorm = (y - hns) ** 2
+            totalnorm = (xnorm + ynorm)
+            if totalnorm > 1e-5:
+                distMap[x, y] = 1. / totalnorm
+    return distMap
 
 if __name__ == '__main__':
     main()
