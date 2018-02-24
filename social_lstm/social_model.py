@@ -52,7 +52,7 @@ class SocialModel():
         self.lr = tf.Variable(args.learning_rate, trainable=False, name="learning_rate")
 
         # Output dimension of the model
-        self.output_size = 5*self.predicted_var
+        self.output_size = 6*self.predicted_var
         self.mixture_size = args.num_dist
 
         # Neighborhood size
@@ -210,9 +210,8 @@ class SocialModel():
 
                 with tf.name_scope("get_coef"):
                     # Extract coef from output of the linear output layer
-                    [o_mu, o_s, o_alpha] = self.get_coef(self.initial_output[ped])
-                    # print 'TEST!'
-                    # print o_mux.get_shape()
+                    [o_mu, o_s, o_alpha, rho] = self.get_coef(self.initial_output[ped])
+
                     # tf.summary.scalar("o_mux", tf.squeeze(o_mux))
                     # tf.summary.scalar("o_muy", tf.squeeze(o_muy))
                     # tf.summary.scalar("o_sx", tf.squeeze(o_sx))
@@ -221,7 +220,7 @@ class SocialModel():
 
                 with tf.name_scope("calculate_loss"):
                     # Calculate loss for the current ped
-                    losspos, lossfunc = self.get_lossfunc(o_mu, o_s, o_alpha, x_data, y_data)
+                    losspos, lossfunc = self.get_lossfunc(o_mu, o_s, o_alpha, rho, x_data, y_data)
                     # tf.summary.scalar("loss", lossfunc)
 
                 with tf.name_scope("increment_cost"):
@@ -353,7 +352,7 @@ class SocialModel():
         result = tf.div(result, denom)
         return result
 
-    def get_lossfunc(self, z_mu, z_s, z_alpha, x_data, y_data):
+    def get_lossfunc(self, z_mu, z_s, z_alpha, z_rho, x_data, y_data):
         '''
         Function to calculate given a 2D distribution over x and y, and target data
         of observed x and y points
@@ -369,8 +368,14 @@ class SocialModel():
 
         data = tf.squeeze(tf.stack([x_data, y_data], axis=1), [2])
 
+        z_sx, z_sy = tf.split(z_s, 2, axis=1)
+        z_sx = tf.squeeze(z_sx)
+        z_sy = tf.squeeze(z_sy)
+        z_sxy = tf.squeeze(tf.multiply(z_rho, tf.multiply(z_sx, z_sy)))
+        cov = tf.stack([tf.stack([tf.multiply(z_sx, z_sx), z_sxy], axis=1), tf.stack([z_sxy, tf.multiply(z_sy, z_sy)],axis=1)], axis=2)
+
         # Calculate the Log PDF of the data w.r.t to the distribution
-        dist = tf.contrib.distributions.MultivariateNormalDiag(loc=z_mu, scale_diag=z_s)
+        dist = tf.contrib.distributions.MultivariateNormalFullCovariance(loc=z_mu, covariance_matrix=cov)
         pdf = dist.prob(data)
         pdf = tf.expand_dims(pdf, 1)
 
@@ -387,14 +392,14 @@ class SocialModel():
 
         z = output
         # Split the output into 5 parts corresponding to means, std devs and corr
-        z_mux, z_muy, z_sx, z_sy, z_alph = tf.split(z, self.output_size, 1)
+        z_mux, z_muy, z_sx, z_sy, z_alph, z_rho = tf.split(z, self.output_size, 1)
         # The output must be exponentiated for the std devs
         z_sx = tf.exp(z_sx)
         z_sy = tf.exp(z_sy)
         z_mu = tf.stack([tf.squeeze(z_mux), tf.squeeze(z_muy)], axis=1)
         z_s = tf.stack([tf.squeeze(z_sx), tf.squeeze(z_sy)], axis=1)
-        # Tanh applied to keep it in the range [-1, 1]
-        # z_alph = tf.nn.softmax(z_alph)
+
+        z_rho = tf.tanh(z_rho)
 
         max_alph = tf.reduce_max(z_alph, 1, keep_dims=True)
         z_alph = tf.subtract(z_alph, max_alph)
@@ -404,14 +409,14 @@ class SocialModel():
         normalize_alph = tf.squeeze(tf.reciprocal(tf.reduce_sum(z_alph, 1, keep_dims=True)))
         z_alph = tf.scalar_mul(normalize_alph, z_alph)
 
-        return [z_mu, z_s, z_alph]
+        return [z_mu, z_s, z_alph, z_rho]
 
     def get_coef0(self, output):
         # eq 20 -> 22 of Graves (2013)
 
         z = output
         # Split the output into 5 parts corresponding to means, std devs and corr
-        z_mux, z_muy, z_sx, z_sy, z_alph = tf.split(z, self.output_size, 0)
+        z_mux, z_muy, z_sx, z_sy, z_alph, z_rho = tf.split(z, self.output_size, 0)
         # The output must be exponentiated for the std devs
         z_sx_0 = tf.exp(z_sx[0])
         z_sy_0 = tf.exp(z_sy[0])
@@ -419,10 +424,17 @@ class SocialModel():
         z_mu = tf.stack([tf.squeeze(z_mux[0]), tf.squeeze(z_muy[0])], axis=1)
         z_s = tf.stack([tf.squeeze(z_sx_0), tf.squeeze(z_sy_0)], axis=1)
 
-        # Tanh applied to keep it in the range [-1, 1]
-        z_alp = tf.nn.softmax(z_alph)
+        z_rho = tf.tanh(z_rho)
 
-        return [z_mu, z_s, z_alp]
+        max_alph = tf.reduce_max(z_alph, 1, keep_dims=True)
+        z_alph = tf.subtract(z_alph, max_alph)
+
+        z_alph = tf.exp(z_alph)
+
+        normalize_alph = tf.squeeze(tf.reciprocal(tf.reduce_sum(z_alph, 1, keep_dims=True)))
+        z_alph = tf.scalar_mul(normalize_alph, z_alph)
+
+        return [z_mu, z_s, z_alph, z_rho]
 
     def getSocialTensor(self, current_frame_data, grid_frame_data, output_states, scale=1):
         '''
@@ -539,7 +551,7 @@ class SocialModel():
         x = np.random.multivariate_normal(mean, cov, 1)
         return x[0][0], x[0][1]
 
-    def sample_biv_gaussian(self, mu, s, alph):
+    def sample_biv_gaussian(self, mu, s, alph, rho):
         '''
         Function to sample a point from a given Diagonal Bivariate normal distribution
         params:
@@ -547,8 +559,8 @@ class SocialModel():
         s : std dev of the distribution in x and y
         alph : Weighting factors of the mixture
         '''
-
-        dist = tf.contrib.distributions.MultivariateNormalDiag(loc=mu, scale_diag=s)
+        cov = [[s[0] * s[0], rho * s[0] * s[1]], [rho * s[0] * s[1], s[1] * s[1]]]
+        dist = tf.contrib.distributions.MultivariateNormalFullCovariance(loc=mu, covariance_matrix=cov)
         # Sampling the distributions
         samples = dist.sample()
         samples = tf.expand_dims(samples, 1)
@@ -599,8 +611,8 @@ class SocialModel():
             # output = output[0]
             newpos = np.zeros((1, self.maxNumPeds, self.size_data_state))
             for pedindex, pedoutput in enumerate(output):
-                mu, s, alph = self.get_coef0(pedoutput[0])
-                next_x, next_y = self.sample_biv_gaussian(mu, s, alph)
+                mu, s, alph, rho = self.get_coef0(pedoutput[0])
+                next_x, next_y = self.sample_biv_gaussian(mu, s, alph, rho)
 
                 # if prev_data[0, pedindex, 0] != 0:
                 #     print "Pedestrian ID", prev_data[0, pedindex, 0]

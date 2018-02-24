@@ -33,7 +33,7 @@ def main():
     parser.add_argument('--num_epochs', type=int, default=50,
                         help='number of epochs')
     # Number of gaussians dist
-    parser.add_argument('--num_dist', type=int, default=20,
+    parser.add_argument('--num_dist', type=int, default=5,
                         help='number of distribution')
     # Frequency at which the model should be saved parameter
     parser.add_argument('--save_every', type=int, default=10,
@@ -59,7 +59,7 @@ def main():
     parser.add_argument('--neighborhood_size', type=int, default=12,
                         help='Neighborhood size to be considered for social grid')
     # Size of the social grid parameter
-    parser.add_argument('--grid_size', type=int, default=4,
+    parser.add_argument('--grid_size', type=int, default=8,
                         help='Grid size of the social grid')
     # Maximum number of pedestrians to be considered
     parser.add_argument('--maxNumPeds', type=int, default=40,
@@ -70,7 +70,7 @@ def main():
     parser.add_argument('-v', '--validDataset', type=int, default=2)
 
     # Lambda regularization parameter (L2)
-    parser.add_argument('--lambda_param', type=float, default=0.0005,
+    parser.add_argument('--lambda_param', type=float, default=0.0003,
                         help='L2 regularization parameter')
     # TensorBoard Writer name
     parser.add_argument('--writer', type=str, default='training',
